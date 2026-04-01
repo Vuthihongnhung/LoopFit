@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<link rel="stylesheet" href="../style.css">
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        button {
+            padding: 6px 12px;
+            border: none;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .danger {
+            background: #e74c3c;
+        }
+
+        .danger:hover {
+            background: #c0392b;
+        }
+
+        input {
+            padding: 6px;
+            margin: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #2c3e50;
+            color: white;
+        }
+
+        tr:hover {
+            background: #f1f1f1;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Admin Dashboard</h1>
+
+    <!-- USERS -->
+    <div class="card">
+        <h2>Danh sách Users</h2>
+        <button onclick="loadUsers()">Load Users</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên</th>
+                    <th>Email</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="userTable"></tbody>
+        </table>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="card">
+        <h2>Thêm sản phẩm</h2>
+        <input id="name" placeholder="Tên sản phẩm">
+        <input id="price" placeholder="Giá">
+        <input id="category" placeholder="Category ID">
+        <button onclick="createProduct()">Thêm</button>
+    </div>
+
+    <div class="card">
+        <h2>Danh sách sản phẩm</h2>
+        <button onclick="loadProducts()">Load Products</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên</th>
+                    <th>Giá</th>
+                    <th>Kho</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="productTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+
+// ================= USERS =================
+function loadUsers() {
+    fetch('users/index.php')
+    .then(res => res.json())
+    .then(data => {
+        let html = '';
+        data.data.forEach(u => {
+            html += `
+                <tr>
+                    <td>${u.id}</td>
+                    <td>${u.name}</td>
+                    <td>${u.email}</td>
+                    <td>${u.status}</td>
+                    <td>
+                        <button onclick="toggleUser(${u.id})">Toggle</button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById("userTable").innerHTML = html;
+    });
+}
+
+function toggleUser(id) {
+    fetch('users/toggle-status.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'id=' + id
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Status: " + data.new_status);
+        loadUsers();
+    });
+}
+
+
+// ================= PRODUCTS =================
+function loadProducts() {
+    fetch('products/index.php')
+    .then(res => res.json())
+    .then(data => {
+        let html = '';
+        data.data.forEach(p => {
+            html += `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.price}</td>
+                    <td>${p.stock}</td>
+                    <td>
+                        <button onclick="editProduct(${p.id}, '${p.name}', ${p.price})">Sửa</button>
+                        <button class="danger" onclick="deleteProduct(${p.id})">Xóa</button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById("productTable").innerHTML = html;
+    });
+}
+
+function createProduct() {
+    let name = document.getElementById("name").value;
+    let price = document.getElementById("price").value;
+    let category = document.getElementById("category").value;
+
+    fetch('products/create.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `name=${name}&price=${price}&category_id=${category}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Thêm thành công");
+        loadProducts();
+    });
+}
+
+function deleteProduct(id) {
+    if (!confirm("Xóa sản phẩm này?")) return;
+
+    fetch('products/delete.php?id=' + id)
+    .then(res => res.json())
+    .then(data => {
+        alert("Đã xóa");
+        loadProducts();
+    });
+}
+
+function editProduct(id, name, price) {
+    let newName = prompt("Tên mới:", name);
+    let newPrice = prompt("Giá mới:", price);
+
+    fetch('products/edit.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id=${id}&name=${newName}&price=${newPrice}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Đã cập nhật");
+        loadProducts();
+    });
+}
+
+</script>
+
+</body>
+</html>
