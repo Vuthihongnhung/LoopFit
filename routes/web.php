@@ -1,0 +1,1 @@
+$router->get('test', 'TestController@test');
