@@ -1,0 +1,435 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* BODY */
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: #F0F0ED;
+    color: #2C2C2C;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* phần nội dung chính */
+main {
+    flex: 1 0 auto;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* =======================
+    2. NAVBAR
+======================= */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background: #f5f5f5;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.menu-icon { font-size: 22px; cursor: pointer; }
+.browse { font-weight: 500; cursor: pointer; }
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 8px 18px;
+    border-radius: 25px;
+    border: 1px solid #eee;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    margin-left: 8px;
+    font-size: 14px;
+}
+
+.nav-center h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    letter-spacing: 1px;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.join-btn {
+    background: #718BBC;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: 0.3s ease;
+}
+
+.join-btn:hover {
+    background: #5a6fa8;
+    transform: translateY(-2px);
+}
+
+/* HERO */
+.hero {
+    position: relative;
+}
+
+.hero img {
+    width: 100%;
+    height: auto;
+}
+
+/* Feature dưới banner */
+.features {
+    display: flex;
+    justify-content: space-between;
+    padding: 30px 50px;
+    background: #f5f5f5;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 23%;
+}
+
+.feature-item i {
+    font-size: 28px;
+    color: orange;
+    border: 2px solid orange;
+    border-radius: 50%;
+    padding: 12px;
+}
+
+.feature-item h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.feature-item p {
+    font-size: 13px;
+    color: #666;
+    margin: 5px 0 0;
+}
+/* =======================
+    3. SIDEBAR
+======================= */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -350px;
+    width: 350px;
+    height: 100%;
+    background: #F0F0ED;
+    z-index: 1001;
+    transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+}
+
+.close-btn {
+    font-size: 24px;                /* Chỉnh dấu X to lên cho dễ bấm */
+    cursor: pointer;
+    line-height: 1;
+    padding: 5px;                   /* Tăng vùng bấm */
+}
+
+.sidebar.active { left: 0; }
+
+
+/* BANNER */
+.sidebar-banner {
+    position: relative;
+    padding: 10px;
+}
+
+.sidebar-banner img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between; /* Đẩy h2 sang trái, close-btn sang phải */
+    align-items: center;
+    padding: 20px;
+}
+
+.sidebar-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    margin: 0;
+}
+
+#overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    z-index: 1000;
+    backdrop-filter: blur(3px);
+}
+
+#overlay.active { display: block; }
+
+/* =======================
+    4. BỘ LỌC (FILTER BAR) - Ép nằm ngang
+======================= */
+.loopfit-filter-container {
+    padding: 40px 40px 20px 40px;
+    width: 100%;
+}
+
+.filter-flex {
+    display: flex !important;
+    flex-direction: row !important; /* Luôn nằm ngang */
+    align-items: center !important;
+    gap: 25px !important;
+    flex-wrap: nowrap !important; /* Tuyệt đối không nhảy dòng */
+}
+
+.filter-text {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-right: 10px;
+}
+
+.filter-box select {
+    background-color: #002147 !important; /* Xanh thẫm đặc trưng */
+    color: white !important;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 170px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.filter-box select:hover {
+    background-color: #003366 !important;
+    transform: scale(1.02);
+}
+
+.filter-reset {
+    color: #888;
+    font-size: 14px;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.filter-reset:hover {
+    color: #ff4d4d;
+    text-decoration: underline;
+}
+
+/* =======================
+    5. PRODUCT GRID - Ô sản phẩm đẹp
+======================= */
+/* Container sản phẩm */
+.product-card {
+    background: #ffffff;
+    border-radius: 25px; /* Bo góc cực đại như hình mẫu */
+    padding: 12px;
+    position: relative; /* Để icon giỏ hàng căn theo card này */
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+    text-align: center;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(113, 139, 188, 0.15); /* Đổ bóng màu chủ đạo */
+}
+
+/* Icon giỏ hàng xanh đậm ở góc phải */
+.cart-icon-overlay {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #718BBC; 
+    color: white;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Ảnh sản phẩm */
+.products {
+    padding: 40px;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 30px;
+}
+
+.product-card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.product-card img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+}
+
+.product-info h3 {
+    font-family: 'Playfair Display', serif; /* Font tiêu đề LoopFit */
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #2c2c2c;
+}
+
+.product-info .price {
+    font-family: 'Montserrat', sans-serif; /* Font nội dung */
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.product-info .price span {
+    font-size: 14px;
+    color: #888;
+    font-weight: 400;
+}
+
+/* Nút Thuê ngay bo tròn */
+.rent-btn {
+    background-color: #6fc6ff; /* Màu xanh đậm đồng bộ với icon giỏ hàng */
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 25px; /* Bo tròn hoàn toàn */
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 80%;
+}
+
+.rent-btn:hover {
+    background-color: #276ef2; /* Chuyển sang màu xanh LoopFit khi hover */
+    transform: scale(1.05);
+}
+
+.btn-detail {
+    color: #718BBC;
+    font-size: 14px;
+    font-weight: 600;
+    padding-top: 5px;
+    border-top: 1px solid #f5f5f5;
+    transition: 0.3s;
+}
+
+.btn-detail:hover {
+    color: #002147;
+}
+
+/* SUBMENU */
+.submenu {
+    display: none;
+    padding-left: 20px;
+}
+
+.sidebar-menu li {
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.sidebar-menu a {
+    display: block;
+    padding: 15px 20px;
+    width: 100%;
+    text-decoration: none;
+    color: #2C2C2C;
+}
+
+/* MENU */
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar-menu li {
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.sidebar-menu li:hover {
+    background: #e0e0e0;
+}
+
+.sidebar-menu a {
+    text-decoration: none;
+    color: #2C2C2C;
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+}
+
+.sidebar-menu a:hover {
+    color: orange;
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+/* =======================
+    6. FOOTER
+======================= */
+.footer {
+    text-align: center;
+    padding: 40px;
+    background: #718BBC;
+    color: white;
+    font-weight: 500;
+}
