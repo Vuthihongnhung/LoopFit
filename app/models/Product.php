@@ -6,34 +6,36 @@ use Core\Model;
 class Product extends Model
 {
     public function getAllWithCategory()
-    {
-        $sql = "SELECT 
-                    p.id,
-                    p.name,
-                    p.price,
-                    p.description,
-                    p.image,
-                    p.stock,
-                    p.category_id,
-                    c.name as category_name,
-                    p.created_at
-                FROM products p
-                LEFT JOIN categories c ON p.category_id = c.id
-                ORDER BY p.id DESC";
-        
-        $result = $this->conn->query($sql);
-        
-        if (!$result) {
-            return [];
-        }
-        
-        $products = [];
-        while ($row = $result->fetch_assoc()) {
-            $products[] = $row;
-        }
-        
-        return $products;
+{
+    $sql = "SELECT 
+                p.id,
+                p.name,
+                p.price,
+                p.description,
+                p.image,
+                p.stock,
+                p.category_id,
+                c.name as category_name,
+                pc.name as menu_category_name,
+                p.created_at
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN product_categories pc ON p.menu_category_id = pc.id
+            ORDER BY p.id DESC";
+    
+    $result = $this->conn->query($sql);
+    
+    if (!$result) {
+        return [];
     }
+    
+    $products = [];
+    while ($row = $result->fetch_assoc()) {
+        $products[] = $row;
+    }
+    
+    return $products;
+}
     
     public function getImageById($id)
     {

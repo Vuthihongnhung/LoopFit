@@ -42,4 +42,11 @@ class Promotion extends Model
     {
         return $this->conn->insert_id;
     }
+     
+    public function delete($id)
+    {
+        $stmt = $this->conn->prepare("DELETE FROM promotions WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
+    }
 }

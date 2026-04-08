@@ -12,11 +12,15 @@ class UserController extends Controller
         AdminMiddleware::check();
     }
     
-    public function index()
-    {
-        return $this->render('admin/users/index.php');
-    }
-    
+   public function index()
+{
+    ob_start();
+    require_once __DIR__ . '/../../../views/admin/users/index.php'; // hoặc promotions
+    $content = ob_get_clean();
+    $pageTitle = 'Quản lý người dùng'; // hoặc tương ứng
+    $activeMenu = 'users'; // hoặc promotions
+    require_once __DIR__ . '/../../../views/layouts/admin.php';
+}
     public function apiGetList()
     {
         $userModel = new User();

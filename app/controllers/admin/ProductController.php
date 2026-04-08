@@ -13,15 +13,15 @@ class ProductController extends Controller
         AdminMiddleware::check();
     }
     
-    public function index()
-    {
-        $productModel = new Product();
-        $products = $productModel->getAllWithCategory();
-        
-        return $this->render('admin/products/index', [
-            'products' => $products
-        ]);
-    }
+  public function index()
+{
+    ob_start();
+    require_once __DIR__ . '/../../../views/admin/products/index.php';
+    $content = ob_get_clean();
+    $pageTitle = 'Quản lý sản phẩm';
+    $activeMenu = 'products';
+    require_once __DIR__ . '/../../../views/layouts/admin.php';
+}
     
     public function apiGetList()
 {
