@@ -5,3 +5,9 @@ $router->get('index', 'HomeController@index');
 
 $router->get('products', 'ProductController@index');
 $router->get('product', 'ProductController@show');
+
+$router->get('checkout', 'CheckoutController@index');
+$router->post('checkout/process', 'CheckoutController@process');
+
+$router->get('orders', 'OrderController@index');
+$router->get('cart', 'CartController@index');

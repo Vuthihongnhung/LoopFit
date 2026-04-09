@@ -17,8 +17,14 @@
 
     <!-- RIGHT -->
     <div class="nav-right">
-        <i class="bi bi-cart2"></i>
+
+        <a href="/LoopFit/public/cart" class="cart-icon">
+            <i class="bi bi-cart2"></i>
+            <span class="cart-count" id="cart-count">2</span>
+        </a>
+
         <i class="bi bi-person"></i>
+
         <button class="join-btn">Join Now</button>
     </div>
 </header>

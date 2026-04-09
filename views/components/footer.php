@@ -9,6 +9,7 @@
 <!-- JS -->
 <script src="/LoopFit/public/assets/user/js/filter.js"></script>
 <script src="/LoopFit/public/assets/user/js/main.js"></script>
+<script src="/LoopFit/public/assets/user/js/cart.js"></script>
 
 </body>
 </html>

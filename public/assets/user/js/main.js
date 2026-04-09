@@ -37,3 +37,66 @@ function closeMenu() {
     document.getElementById("overlay").classList.remove("active");
     document.body.style.overflow = "auto";
 }
+
+//*Tăng giảm số lượng trong product_detail
+
+function changeImg(el) {
+    document.getElementById("mainImg").src = el.src;
+}
+
+function increase() {
+    let qty = document.getElementById("qty");
+    qty.value = parseInt(qty.value) + 1;
+}
+
+function decrease() {
+    let qty = document.getElementById("qty");
+    if (qty.value > 1) {
+        qty.value = parseInt(qty.value) - 1;
+    }
+}
+
+ //*thêm vào giỏ hàng
+function addToCart() {
+    // lấy size
+    const size = document.querySelector(".size-btn.active")?.innerText;
+
+    // lấy ngày
+    const rentDate = document.getElementById("rentDate").value;
+    const returnDate = document.getElementById("returnDate").value;
+
+    // số lượng
+    const qty = document.getElementById("qty").value;
+
+    // fake product id (sau này lấy từ backend)
+    const productId = 1;
+
+    // validate
+    if (!size) {
+        alert("Vui lòng chọn size!");
+        return;
+    }
+
+    if (!rentDate || !returnDate) {
+        alert("Vui lòng chọn ngày thuê!");
+        return;
+    }
+
+    // tạo object
+    const item = {
+        product_id: productId,
+        size: size,
+        rent_date: rentDate,
+        return_date: returnDate,
+        quantity: qty
+    };
+
+    console.log("Đã thêm:", item);
+
+    // lưu localStorage (giả lập giỏ hàng)
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    cart.push(item);
+    localStorage.setItem("cart", JSON.stringify(cart));
+
+    alert("Đã thêm vào giỏ!");
+}
