@@ -1,4 +1,16 @@
-﻿// Toast notification
+﻿﻿// ========== Toggle sidebar trên mobile ==========
+document.addEventListener('DOMContentLoaded', function () {
+    const toggleBtn = document.getElementById('menuToggle');
+    const sidebar = document.querySelector('.sidebar');
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            sidebar.classList.toggle('open');
+        });
+    }
+});
+
+// ========== Toast notification ==========
 function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = 'toast-message';
@@ -8,17 +20,7 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 3000);
 }
 
-// Xác nhận xóa
+// ========== Confirm delete (tùy chọn) ==========
 function confirmDelete(message, callback) {
     if (confirm(message)) callback();
 }
-
-// Toggle sidebar trên mobile
-document.addEventListener('DOMContentLoaded', () => {
-    const toggleBtn = document.getElementById('menuToggle');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            document.querySelector('.sidebar').classList.toggle('open');
-        });
-    }
-});

@@ -2,7 +2,7 @@
 namespace Core;
 
 class Model {
-    protected $conn;
+    public $conn;
 
     public function __construct() {
         // Gọi Database có kèm Namespace

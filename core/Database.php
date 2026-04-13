@@ -1,23 +1,36 @@
 <?php
-namespace Core; // BẮT BUỘC có dòng này
+
+namespace Core;
 
 use mysqli;
 
-class Database {
-    private $host = "localhost";
-    private $db_name = "loopfit";
-    private $username = "root";
-    private $password = "";
+class Database
+{
     private $conn;
 
-    public function getConnection() {
-        $this->conn = new mysqli($this->host, $this->username, $this->password, $this->db_name);
-
-        if ($this->conn->connect_error) {
-            die("Kết nối MySQLi thất bại: " . $this->conn->connect_error);
-        }
-
-        $this->conn->set_charset("utf8");
+    public function getConnection()
+{
+    // Nếu đã có kết nối rồi thì trả về luôn, không tạo mới nữa
+    if ($this->conn instanceof mysqli && $this->conn->ping()) {
         return $this->conn;
     }
+
+    $config = require __DIR__ . '/../config/database.php';
+
+    $this->conn = new mysqli(
+        $config['host'],
+        $config['username'],
+        $config['password'],
+        $config['database'],
+        (int)($config['port'] ?? 3306)
+    );
+
+    if ($this->conn->connect_error) {
+        die("❌ DB ERROR: " . $this->conn->connect_error);
+    }
+
+    $this->conn->set_charset($config['charset'] ?? 'utf8mb4');
+    
+    return $this->conn;
+}
 }

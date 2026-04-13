@@ -1,6 +1,6 @@
 <?php
 namespace App\Controllers\Admin;
-
+use Core\Database;
 use const UPLOAD_PATH;
 use App\Models\Product;
 use Core\Controller;
@@ -13,15 +13,32 @@ class ProductController extends Controller
         AdminMiddleware::check();
     }
     
-    public function index()
-    {
-        $productModel = new Product();
-        $products = $productModel->getAllWithCategory();
-        
-        return $this->render('admin/products/index', [
-            'products' => $products
-        ]);
+
+public function index()
+{
+    $conn = (new \Core\Database())->getConnection();
+
+    $result = $conn->query("
+        SELECT id, name 
+        FROM categories
+    ");
+
+    if (!$result) {
+        die("SQL lỗi: " . $conn->error);
     }
+
+    $categories = [];
+
+    while ($row = $result->fetch_assoc()) {
+        $categories[] = $row;
+    }
+
+    return $this->view('admin.products.index', [
+        'pageTitle' => 'Quản lý sản phẩm',
+        'activeMenu' => 'products',
+        'categories' => $categories
+    ]);
+}
     
     public function apiGetList()
 {

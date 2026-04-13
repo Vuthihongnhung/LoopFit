@@ -18,44 +18,50 @@ class Router {
         $this->dispatch($uri);
     }
 
-    public function dispatch($uri) {
-        $method = $_SERVER['REQUEST_METHOD'];
-        $uri = strtok($uri, '?');
-        $uri = trim($uri, '/');
+    public function dispatch($uri)
+{
+    $method = $_SERVER['REQUEST_METHOD'];
+    $uri = strtok($uri, '?');
+    $uri = trim($uri, '/');
 
-        if (isset($this->routes[$method][$uri])) {
-            $action = $this->routes[$method][$uri];
+    foreach ($this->routes[$method] as $route => $action) {
+
+        // convert /product/{id} -> regex
+        $pattern = preg_replace('#\{[a-zA-Z0-9_]+\}#', '([0-9]+)', $route);
+        $pattern = "#^" . $pattern . "$#";
+
+        if (preg_match($pattern, $uri, $matches)) {
+
+            array_shift($matches);
 
             if (is_callable($action)) {
-                echo $action();
+                echo call_user_func_array($action, $matches);
                 return;
             }
 
-            if (is_string($action)) {
-                $parts = explode('@', $action);
-                $controllerPath = $parts[0];
-                $methodName = $parts[1];
+            $parts = explode('@', $action);
+            $controllerPath = $parts[0];
+            $methodName = $parts[1];
 
-                // xử lý namespace
-                if (strpos($controllerPath, 'admin/') === 0) {
-                    $controllerPath = str_replace('admin/', '', $controllerPath);
-                    $controllerName = "App\\Controllers\\Admin\\$controllerPath";
-                } else {
-                    $controllerName = "App\\Controllers\\User\\$controllerPath";
-                }
+            $controllerName = "App\\Controllers\\User\\$controllerPath";
 
-                if (class_exists($controllerName)) {
-                    $controller = new $controllerName();
+            if (strpos($controllerPath, 'admin/') === 0) {
+                $controllerPath = str_replace('admin/', '', $controllerPath);
+                $controllerName = "App\\Controllers\\Admin\\$controllerPath";
+            }
 
-                    if (method_exists($controller, $methodName)) {
-                        echo $controller->$methodName();
-                        return;
-                    }
+            if (class_exists($controllerName)) {
+                $controller = new $controllerName();
+
+                if (method_exists($controller, $methodName)) {
+                    echo call_user_func_array([$controller, $methodName], $matches);
+                    return;
                 }
             }
         }
-
-        http_response_code(404);
-        echo "404 Not Found - Route: '$uri'";
     }
+
+    http_response_code(404);
+    echo "404 Not Found - Route: '$uri'";
+}
 }

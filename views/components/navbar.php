@@ -2,11 +2,11 @@
 <header class="navbar">
 <div class="nav-left">
         <span class="menu-icon" onclick="openMenu()">☰</span>
-        <span>Browse</span>
+        <span>Danh mục</span>
 
         <div class="search-box">
             <i class="bi bi-search"></i>
-            <input type="text" placeholder="Search">
+            <input type="text" placeholder="Tìm kiếm">
         </div>
     </div>
 
@@ -17,9 +17,17 @@
 
     <!-- RIGHT -->
     <div class="nav-right">
-        <i class="bi bi-cart2"></i>
+
+        <a href="/LoopFit/public/cart" class="cart-icon">
+            <i class="bi bi-cart2"></i>
+            <span class="cart-count" id="cart-count">
+                <?= $shared['cartCount'] ?? 0 ?>
+            </span>
+        </a>
+
         <i class="bi bi-person"></i>
-        <button class="join-btn">Join Now</button>
+
+        <button class="join-btn">Đăng ký</button>
     </div>
 </header>
 

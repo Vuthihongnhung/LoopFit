@@ -4,6 +4,7 @@ error_reporting(E_ALL);
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+    $_SESSION['user_id'] = 1;
 }
 
 // ===== CONFIG =====
@@ -18,11 +19,11 @@ require_once __DIR__ . '/../core/Database.php';
 spl_autoload_register(function ($class) {
     // 1. Chuyển \ thành /
     $class = str_replace('\\', '/', $class);
-    
+
     // 2. Chuyển App/ thành app/
     $class = str_replace('App/', 'app/', $class);
 
-    // 3. Mẹo quan trọng: Ép các thư mục Middlewares, Models, Controllers về chữ thường
+    // 3. Ép các thư mục về chữ thường
     $class = str_replace('Middlewares/', 'middlewares/', $class);
     $class = str_replace('Models/', 'models/', $class);
     $class = str_replace('Controllers/', 'controllers/', $class);
@@ -59,19 +60,20 @@ $url = trim($url, '/');
 // method
 $method = $_SERVER['REQUEST_METHOD'];
 
+// ===== PRODUCT DETAIL DYNAMIC =====
+    if (preg_match('#^product/([0-9]+)$#', $url, $matches)) {
+        $ctrl = new App\Controllers\User\ProductController();
+        $ctrl->show($matches[1]);
+        exit;
+    }
 
 // ===== ROUTING =====
 switch ($url) {
 
     // ===== USER =====
-    
     case '':
     case 'index':
-    case 'home': // Thêm dòng này ở đây
-        $ctrl = new App\Controllers\User\HomeController();
-        $ctrl->index();
-        break;
-    case 'index':
+    case 'home':
         $ctrl = new App\Controllers\User\HomeController();
         $ctrl->index();
         break;
@@ -81,11 +83,54 @@ switch ($url) {
         $ctrl->index();
         break;
 
-    case 'product':
+    case (preg_match('#^product/([0-9]+)$#', $url, $matches) ? true : false):
         $ctrl = new App\Controllers\User\ProductController();
-        $ctrl->show();
+        $ctrl->show($matches[1]);
         break;
 
+    // ===== CART PAGE =====
+    case 'cart':
+        $ctrl = new App\Controllers\User\CartController();
+        $ctrl->index();
+        break;
+
+    // ===== CART API =====
+    case 'api/cart/add':
+        $ctrl = new App\Controllers\User\CartController();
+        $ctrl->add();
+        break;
+
+    case 'api/cart/update':
+        $ctrl = new App\Controllers\User\CartController();
+        $ctrl->update();
+        break;
+
+    case 'api/cart/remove':
+        $ctrl = new App\Controllers\User\CartController();
+        $ctrl->remove();
+        break;
+    
+    case 'api/products':
+        $ctrl = new App\Controllers\User\ProductController();
+        $ctrl->filterApi();
+        break;
+
+    // ===== CHECKOUT =====
+    case 'checkout':
+        $ctrl = new App\Controllers\User\CheckoutController();
+        $ctrl->index();
+        break;
+
+    case 'checkout/process':
+        $ctrl = new App\Controllers\User\CheckoutController();
+        $ctrl->process();
+        break;
+
+    // ===== USER ORDERS =====
+    case 'orders':
+        $ctrl = new App\Controllers\User\OrderController();
+        $ctrl->index();
+        break;
 
     // ===== AUTH =====
     case 'admin/login':
@@ -102,13 +147,11 @@ switch ($url) {
         $ctrl->logout();
         break;
 
-
     // ===== DASHBOARD =====
     case 'admin/dashboard':
         $ctrl = new App\Controllers\Admin\DashboardController();
         $ctrl->index();
         break;
-
 
     // ===== PRODUCTS =====
     case 'admin/products':
@@ -146,7 +189,6 @@ switch ($url) {
         $ctrl->apiGetList();
         break;
 
-
     // ===== ORDERS =====
     case 'admin/orders':
         $ctrl = new App\Controllers\Admin\OrderController();
@@ -173,7 +215,6 @@ switch ($url) {
         $ctrl->updateStatus();
         break;
 
-
     // ===== USERS =====
     case 'admin/users':
         $ctrl = new App\Controllers\Admin\UserController();
@@ -190,7 +231,6 @@ switch ($url) {
         $ctrl->toggleStatus();
         break;
 
-
     // ===== PROMOTIONS =====
     case 'admin/promotions':
         $ctrl = new App\Controllers\Admin\PromotionController();
@@ -206,7 +246,10 @@ switch ($url) {
         $ctrl = new App\Controllers\Admin\PromotionController();
         $ctrl->store();
         break;
-
+    case 'admin/promotions/delete':
+        $ctrl = new App\Controllers\Admin\PromotionController();
+        $ctrl->delete();
+        break;
 
     // ===== 404 =====
     default:

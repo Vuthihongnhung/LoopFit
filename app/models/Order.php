@@ -65,4 +65,28 @@ class Order extends Model
         $stmt->bind_param("si", $status, $orderId);
         return $stmt->execute();
     }
+    public function create($userId, $rentDate, $returnDate, $totalPrice, $status = 'pending')
+{
+    $sql = "INSERT INTO orders (user_id, rent_date, return_date, total_price, status)
+            VALUES (?, ?, ?, ?, ?)";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param("issds", $userId, $rentDate, $returnDate, $totalPrice, $status);
+
+    if ($stmt->execute()) {
+        return $this->conn->insert_id;
+    }
+
+    return false;
+}
+
+public function getByUser($userId)
+{
+    $sql = "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
 }
