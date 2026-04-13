@@ -15,20 +15,30 @@ class ProductController extends Controller
     
     public function index()
     {
-        $productModel = new Product();
-        $products = $productModel->getAllWithCategory();
-        
-        return $this->render('admin/products/index', [
-            'products' => $products
-        ]);
+        ob_start();
+        require_once __DIR__ . '/../../../views/admin/products/index.php';
+        $content = ob_get_clean();
+        $pageTitle = 'Quản lý sản phẩm';
+        $activeMenu = 'products';
+        require_once __DIR__ . '/../../../views/layouts/admin.php';
     }
     
-    public function apiGetList()
+  public function apiGetList()
 {
     $productModel = new Product();
-    $products = $productModel->getAllWithCategory();
     
-    // Lấy BASE_URL từ config (nếu có) hoặc dùng đường dẫn cứng
+    // Kiểm tra nếu có id -> lấy 1 sản phẩm
+    if (isset($_GET['id']) && !empty($_GET['id'])) {
+        $id = (int)$_GET['id'];
+        $product = $productModel->getById($id);
+        if ($product) {
+            $product['image'] = $product['image'] ? 'http://localhost:8080/LoopFit/public/uploads/' . $product['image'] : null;
+        }
+        return $this->json(['success' => true, 'data' => $product]);
+    }
+    
+    // Không có id -> lấy tất cả sản phẩm
+    $products = $productModel->getAllWithCategory();
     $baseUrl = 'http://localhost:8080/LoopFit/public';
     
     $formattedProducts = [];
@@ -44,6 +54,8 @@ class ProductController extends Controller
                 "id" => (int)$p['category_id'],
                 "name" => $p['category_name']
             ],
+            "menu_category_id" => $p['menu_category_id'] ?? null,
+            "menu_category" => $p['menu_category_name'] ?? null,
             "created_at" => $p['created_at']
         ];
     }
@@ -66,7 +78,7 @@ class ProductController extends Controller
         $id = $_POST['id'] ?? 0;
         $name = trim($_POST['name'] ?? '');
         $price = $_POST['price'] ?? 0;
-        $category_id = $_POST['category_id'] ?? 0;
+        $menu_category_id = $_POST['menu_category_id'] ?? 0;
         $description = $_POST['description'] ?? '';
         $stock = $_POST['stock'] ?? 0;
         
@@ -98,7 +110,7 @@ class ProductController extends Controller
             }
         }
         
-        $result = $productModel->update($id, $name, $price, $description, $image_name, $stock, $category_id);
+        $result = $productModel->update($id, $name, $price, $description, $image_name, $stock, $menu_category_id);
         
         if ($result) {
             return $this->json([
@@ -126,12 +138,12 @@ class ProductController extends Controller
         
         $name = trim($_POST['name'] ?? '');
         $price = $_POST['price'] ?? 0;
-        $category_id = $_POST['category_id'] ?? 0;
+        $menu_category_id = $_POST['menu_category_id'] ?? 0;
         $description = $_POST['description'] ?? '';
         $stock = $_POST['stock'] ?? 0;
         $image_name = null;
         
-        if ($name == '' || $price <= 0) {
+        if ($name == '' || $price <= 0 || $menu_category_id <= 0) {
             return $this->json(['success' => false, 'error' => 'Dữ liệu không hợp lệ']);
         }
         
@@ -143,7 +155,7 @@ class ProductController extends Controller
         }
         
         $productModel = new \App\Models\Product();
-        $result = $productModel->create($name, $price, $description, $image_name, $stock, $category_id);
+        $result = $productModel->create($name, $price, $description, $image_name, $stock, $menu_category_id);
         
         if ($result) {
             return $this->json(['success' => true, 'message' => 'Thêm sản phẩm thành công']);
@@ -152,21 +164,21 @@ class ProductController extends Controller
         }
     }
     
-public function edit()
-{
-    $id = $_GET['id'] ?? 0;
-    if (!$id) {
-        header('Location: http://localhost:8080/LoopFit/public/index.php?url=admin/products');
-        exit();
+    public function edit()
+    {
+        $id = $_GET['id'] ?? 0;
+        if (!$id) {
+            header('Location: http://localhost:8080/LoopFit/public/index.php?url=admin/products');
+            exit();
+        }
+        $productModel = new \App\Models\Product();
+        $product = $productModel->getById($id);
+        if (!$product) {
+            header('Location: http://localhost:8080/LoopFit/public/index.php?url=admin/products');
+            exit();
+        }
+        return $this->render('admin/products/edit.php', ['product' => $product]);
     }
-    $productModel = new \App\Models\Product();
-    $product = $productModel->getById($id);
-    if (!$product) {
-        header('Location: http://localhost:8080/LoopFit/public/index.php?url=admin/products');
-        exit();
-    }
-    return $this->render('admin/products/edit.php', ['product' => $product]);
-}
     
     public function delete()
     {

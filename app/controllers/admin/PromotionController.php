@@ -12,10 +12,15 @@ class PromotionController extends Controller
         AdminMiddleware::check();
     }
     
-    public function index()
-    {
-        return $this->render('admin/promotions/index.php');
-    }
+ public function index()
+{
+    ob_start();
+    require_once __DIR__ . '/../../../views/admin/promotions/index.php';
+    $content = ob_get_clean();
+    $pageTitle = 'Quản lý khuyến mãi';
+    $activeMenu = 'promotions';
+    require_once __DIR__ . '/../../../views/layouts/admin.php';
+}
     
     public function apiGetList()
     {
@@ -94,5 +99,17 @@ class PromotionController extends Controller
                 "error" => "Tạo mã thất bại"
             ]);
         }
+    }
+        public function delete()
+    {
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            return $this->json(['success' => false, 'error' => 'Method không hợp lệ']);
+        }
+        
+        $id = $_POST['id'] ?? 0;
+        $promotionModel = new \App\Models\Promotion();
+        $result = $promotionModel->delete($id);
+        
+        return $this->json(['success' => $result]);
     }
 }

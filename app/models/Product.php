@@ -16,9 +16,11 @@ class Product extends Model
                     p.stock,
                     p.category_id,
                     c.name as category_name,
+                    pc.name as menu_category_name,
                     p.created_at
                 FROM products p
                 LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN product_categories pc ON p.menu_category_id = pc.id
                 ORDER BY p.id DESC";
         
         $result = $this->conn->query($sql);
@@ -43,13 +45,13 @@ class Product extends Model
         return $stmt->get_result()->fetch_assoc();
     }
     
-    public function update($id, $name, $price, $description, $image, $stock, $category_id)
+    public function update($id, $name, $price, $description, $image, $stock, $menu_category_id)
     {
         $stmt = $this->conn->prepare("UPDATE products 
-            SET name=?, price=?, description=?, image=?, stock=?, category_id=? 
+            SET name=?, price=?, description=?, image=?, stock=?, menu_category_id=? 
             WHERE id=?");
         
-        $stmt->bind_param("sdssiii", $name, $price, $description, $image, $stock, $category_id, $id);
+        $stmt->bind_param("sdssiii", $name, $price, $description, $image, $stock, $menu_category_id, $id);
         
         return $stmt->execute();
     }
@@ -67,11 +69,22 @@ class Product extends Model
         $stmt->execute();
         return $stmt->get_result()->fetch_assoc();
     }
+    
+    public function create($name, $price, $description, $image, $stock, $menu_category_id)
+    {
+        $stmt = $this->conn->prepare("INSERT INTO products (name, price, description, image, stock, menu_category_id) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sdssii", $name, $price, $description, $image, $stock, $menu_category_id);
+        return $stmt->execute();
+    }
+    
+    public function delete($id)
+    {
+        $stmt = $this->conn->prepare("DELETE FROM products WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
+    }
 
-    // --- CÁC HÀM ADMIN (Giữ lại các hàm cũ đã thêm trước đó) ---
-    // ... (các hàm getById, create, update, delete đã thêm ở bước trước)
-
-    // --- HÀM LỌC SẢN PHẨM (Dành cho phía User - Fix lỗi hiện tại) ---
+    // Hàm lọc sản phẩm cho User
     public function getFilteredProducts($category_id, $gender, $price_range, $style = null) {
         if (!$this->conn) return []; 
 
@@ -79,21 +92,18 @@ class Product extends Model
         $params = [];
         $types = "";
 
-        // Lọc theo danh mục
         if (!empty($category_id)) {
             $sql .= " AND category_id = ?";
             $params[] = $category_id;
             $types .= "i";
         }
 
-        // Lọc theo giới tính
         if (!empty($gender) && $gender !== 'all') {
             $sql .= " AND (gender = ? OR gender = 'all')";
             $params[] = $gender;
             $types .= "s";
         }
 
-        // Lọc theo khoảng giá
         if (!empty($price_range) && $price_range !== 'all') {
             $parts = explode('-', $price_range);
             if (isset($parts[1]) && $parts[1] === 'up') {

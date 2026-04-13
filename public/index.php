@@ -206,7 +206,10 @@ switch ($url) {
         $ctrl = new App\Controllers\Admin\PromotionController();
         $ctrl->store();
         break;
-
+    case 'admin/promotions/delete':
+        $ctrl = new App\Controllers\Admin\PromotionController();
+        $ctrl->delete();
+        break;
 
     // ===== 404 =====
     default:

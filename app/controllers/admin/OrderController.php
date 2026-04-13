@@ -17,10 +17,15 @@ class OrderController extends Controller
     }
     
     // Hiển thị trang danh sách đơn hàng (HTML)
-    public function index()
-    {
-        return $this->render('admin/orders/index.php');
-    }
+ public function index()
+{
+    ob_start();
+    require_once __DIR__ . '/../../../views/admin/orders/index.php';
+    $content = ob_get_clean();
+    $pageTitle = 'Quản lý đơn hàng';
+    $activeMenu = 'orders';
+    require_once __DIR__ . '/../../../views/layouts/admin.php';
+}
     
     // API: Lấy danh sách đơn hàng (JSON)
     public function getAll()
