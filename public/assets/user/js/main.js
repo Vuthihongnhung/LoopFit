@@ -1,30 +1,25 @@
 function toggleMenu(element) {
-    // 1. Tìm submenu (thẻ ul) ngay sau thẻ li vừa click
     const submenu = element.nextElementSibling;
 
-    if (submenu && submenu.classList.contains('submenu')) {
-        // Kiểm tra trạng thái hiển thị thực tế
-        const isHidden = window.getComputedStyle(submenu).display === "none";
+    if (!submenu || !submenu.classList.contains('submenu')) return;
 
-        // 2. ĐÓNG TẤT CẢ các menu khác trước khi mở cái mới (Hiệu ứng Accordion)
-        document.querySelectorAll('.submenu').forEach(el => {
-            el.style.display = 'none';
-        });
-        document.querySelectorAll('.sidebar-menu li').forEach(li => {
-            li.classList.remove('active'); // Gỡ bỏ xoay mũi tên của các mục khác
-        });
+    const isOpen = submenu.classList.contains('active'); // 🔥 check TRƯỚC
 
-        // 3. Xử lý mục vừa được click
-        if (isHidden) {
-            submenu.style.display = "block";
-            element.classList.add('active'); // THÊM CLASS ĐỂ XOAY MŨI TÊN
-        } else {
-            submenu.style.display = "none";
-            element.classList.remove('active'); // GỠ CLASS ĐỂ XOAY VỀ CŨ
-        }
+    // đóng tất cả
+    document.querySelectorAll('.submenu').forEach(el => {
+        el.classList.remove('active');
+    });
+
+    document.querySelectorAll('.sidebar-menu li').forEach(li => {
+        li.classList.remove('active');
+    });
+
+    // nếu trước đó đang mở → KHÔNG mở lại => sẽ đóng
+    if (!isOpen) {
+        submenu.classList.add('active');
+        element.classList.add('active');
     }
 }
-
 // Giữ nguyên hàm open/close cũ
 function openMenu() {
     document.getElementById("sidebar").classList.add("active");
@@ -37,3 +32,41 @@ function closeMenu() {
     document.getElementById("overlay").classList.remove("active");
     document.body.style.overflow = "auto";
 }
+
+// =====================
+// PRODUCT DETAIL UI
+// =====================
+
+window.changeImg = function (el) {
+    const img = document.getElementById("mainImg");
+    if (img) img.src = el.src;
+};
+
+window.increase = function () {
+    const qty = document.getElementById("qty");
+    if (!qty) return;
+
+    qty.value = parseInt(qty.value || 1) + 1;
+};
+
+window.decrease = function () {
+    const qty = document.getElementById("qty");
+    if (!qty) return;
+
+    let val = parseInt(qty.value || 1);
+    if (val > 1) qty.value = val - 1;
+};
+
+let selectedSize = null;
+
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('size-btn')) {
+
+        document.querySelectorAll('.size-btn')
+            .forEach(btn => btn.classList.remove('active'));
+
+        e.target.classList.add('active');
+
+        selectedSize = e.target.dataset.size || e.target.innerText.trim();
+    }
+});

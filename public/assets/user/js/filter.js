@@ -1,22 +1,32 @@
-// filter.js (Phác thảo ý tưởng)
-document.addEventListener('DOMContentLoaded', function() {
-    const genderSelect = document.querySelector('select[name="gender"]');
-    const priceSelect = document.querySelector('select[name="price"]');
-    const cards = document.querySelectorAll('.product-card'); // Đảm bảo card có class này
+document.addEventListener("DOMContentLoaded", function () {
 
-    function filterProducts() {
-        const selectedGender = genderSelect.value;
-        const selectedPrice = priceSelect.value;
+    const gender = document.getElementById("filter-gender");
+    const price  = document.getElementById("filter-price");
 
-        cards.forEach(card => {
-            // Lấy dữ liệu từ thuộc tính data- của card (bạn cần thêm vào HTML)
-            const cardGender = card.getAttribute('data-gender'); 
-            const cardPrice = parseFloat(card.getAttribute('data-price'));
-
-            // Logic ẩn/hiện card bằng CSS display
-            // ...
-        });
+    function fetchProducts() {
+        fetch(`/LoopFit/public/api/products?gender=${gender.value}&price=${price.value}`)
+            .then(res => res.json())
+            .then(data => renderProducts(data));
     }
 
-    // Nếu chọn cách này, bạn bỏ cái onchange="this.form.submit()" trong PHP đi
+    gender.addEventListener("change", fetchProducts);
+    price.addEventListener("change", fetchProducts);
+
 });
+
+function renderProducts(products) {
+    const container = document.querySelector(".product-list");
+    container.innerHTML = "";
+
+    products.forEach(p => {
+        container.innerHTML += `
+            <div class="product-card">
+                <a href="/LoopFit/public/product/${p.id}">
+                    <img src="/LoopFit/public/uploads/products/${p.image}">
+                    <h3>${p.name}</h3>
+                    <p>${Number(p.price).toLocaleString()}đ</p>
+                </a>
+            </div>
+        `;
+    });
+}

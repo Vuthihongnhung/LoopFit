@@ -1,51 +1,89 @@
-<?php 
-include dirname(__DIR__) . '/components/header.php'; 
-include dirname(__DIR__) . '/components/navbar.php'; 
-?>
+<div class="loopfit-filter-row">
+    <form method="GET" action="/LoopFit/public/products" class="filter-flex-wrapper">
 
-<main class="products-main"> 
-    <div class="loopfit-filter-row">
-        <form method="GET" action="/LoopFit/public/products" id="filterForm" class="filter-flex-wrapper">
-            <span class="filter-text">Bộ lọc:</span>
+        <span class="filter-text">Bộ lọc:</span>
 
-            <div class="filter-box">
-                <select name="gender" onchange="this.form.submit()">
-                    <option value="all">Tất cả giới tính</option>
-                    <option value="male" <?= ($current_gender == 'male') ? 'selected' : '' ?>>Nam</option>
-                    <option value="female" <?= ($current_gender == 'female') ? 'selected' : '' ?>>Nữ</option>
-                </select>
-            </div>
+        <div class="filter-box">
+            <select name="gender" id="filter-gender">
+                <option value="all">Tất cả giới tính</option>
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+            </select>
+        </div>
 
-            <div class="filter-box">
-                <select name="price" onchange="this.form.submit()">
-                    <option value="all">Tất cả các mức giá</option>
-                    <option value="0-100000" <?= ($current_price == '0-100000') ? 'selected' : '' ?>>Dưới 100k</option>
-                    <option value="100000-300000" <?= ($current_price == '100000-300000') ? 'selected' : '' ?>>100k - 300k</option>
-                    <option value="300000-up" <?= ($current_price == '300000-up') ? 'selected' : '' ?>>Trên 300k</option>
-                </select>
-            </div>
+        <div class="filter-box">
+            <select name="price" id="filter-price">
+                <option value="all">Tất cả giá</option>
+                <option value="0-100000">Dưới 100k</option>
+                <option value="100000-300000">100k - 300k</option>
+                <option value="300000-up">Trên 300k</option>
+            </select>
+        </div>
 
-            <a href="/LoopFit/public/products" class="filter-reset">Xóa lọc</a>
-        </form>
-    </div>
+        <a href="/LoopFit/public/products" class="filter-reset">Xóa lọc</a>
 
-    <div class="product-grid">
-        <?php if (!empty($products)): ?>
-            <?php foreach ($products as $item): ?>
-                <?php 
-                    // Chuẩn bị dữ liệu cho file product-card.php
-                    $name = htmlspecialchars($item['name']);
-                    $price = number_format($item['price'], 0, ',', '.');
-                    $image = !empty($item['image']) ? '/LoopFit/public/images/' . $item['image'] : 'https://via.placeholder.com/250x300?text=LoopFit';
-                    
-                    // Gọi file card sản phẩm (Điều chỉnh đường dẫn nếu cần)
-                    include dirname(__DIR__) . '/components/product-card.php'; 
+    </form>
+</div>
+
+<div class="container" style="padding: 30px;">
+
+    <h2>Sản phẩm</h2>
+
+    <?php if (!empty($products)): ?>
+
+        <div class="product-list" style="
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        ">
+
+            <?php foreach ($products as $product): ?>
+
+                <?php
+                    $id    = $product['id'] ?? 0;
+                    $name  = $product['name'] ?? 'Sản phẩm';
+                    $price = $product['price'] ?? 0;
+                    $image = $product['image'] ?? 'default.jpg';
                 ?>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p style="text-align: center; width: 100%; grid-column: 1/-1;">Không tìm thấy sản phẩm nào phù hợp.</p>
-        <?php endif; ?>
-    </div>
-</main>
 
-<?php include dirname(__DIR__) . '/components/footer.php'; ?>
+                <div class="product-card">
+
+                    <!-- CLICK VÀO DETAIL -->
+                    <a href="/LoopFit/public/product/<?= $id ?>" style="text-decoration:none; color:inherit;">
+
+                        <div class="product-image">
+                            <img 
+                                src="/LoopFit/public/uploads/products/<?= htmlspecialchars($image) ?>" 
+                                alt="<?= htmlspecialchars($name) ?>"
+                                style="width:100%; height:250px; object-fit:cover;"
+                            >
+                        </div>
+
+                        <div class="product-info">
+                            <h3><?= htmlspecialchars($name) ?></h3>
+
+                            <p class="price">
+                                <?= number_format((float)$price, 0, ',', '.') ?>đ 
+                                <span>/ ngày</span>
+                            </p>
+                        </div>
+
+                    </a>
+
+                    <!-- BUTTON -->
+                    <button class="rent-btn"
+                        onclick="goToDetail(<?= $id ?>)">
+                        Thuê ngay
+                    </button>
+
+                </div>
+
+            <?php endforeach; ?>
+
+        </div>
+
+    <?php endif; ?>
+
+</div>
+
+

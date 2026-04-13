@@ -1,24 +1,42 @@
+<?php
+$id    = $product['id'] ?? 0;
+$name  = $product['name'] ?? '';
+$price = $product['price'] ?? 0;
+$image = $product['image'] ?? '';
+?>
+
 <div class="product-card">
-    <div class="cart-icon-overlay">
-        <i class="fas fa-cart-plus"></i>
-    </div>
 
-    <div class="product-image">
-        <img 
-            src="<?= $image ?>" 
-            alt="<?= $name ?>"
-        >
-    </div>
+    <!-- CLICK VÀO CARD -->
+    <a href="/LoopFit/public/product/<?= $id ?>" style="text-decoration:none; color:inherit;">
 
-    <div class="product-info">
-        <h3><?= $name ?></h3>
+        <div class="cart-icon-overlay">
+            <i class="fas fa-cart-plus"></i>
+        </div>
 
-        <p class="price">
-            <?= number_format($price, 0, ',', '.') ?>đ <span>/ ngày</span>
-        </p>
+        <div class="product-image">
+            <img 
+                src="/LoopFit/public/uploads/products/<?= htmlspecialchars($image) ?>" 
+                alt="<?= htmlspecialchars($name) ?>"
+            >
+        </div>
 
-        <button class="rent-btn">
+        <div class="product-info">
+            <h3><?= htmlspecialchars($name) ?></h3>
+
+            <p class="price">
+                <?= number_format($price, 0, ',', '.') ?>đ 
+                <span>/ ngày</span>
+            </p>
+        </div>
+
+    </a>
+
+    <?php if (empty($hideButton)) : ?>
+        <button class="rent-btn"
+            onclick="addToCartQuick(<?= $id ?>)">
             Thuê ngay
         </button>
-    </div>
+    <?php endif; ?>
+
 </div>

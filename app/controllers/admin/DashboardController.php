@@ -32,9 +32,9 @@ class DashboardController extends Controller
         
         return $this->json($data);
     }
+    
    public function index()
 {
-    $content = __DIR__ . '/../../../views/admin/dashboard.php';
-    require_once __DIR__ . '/../../../views/layouts/admin.php';
+    require_once __DIR__ . '/../../../views/admin/dashboard.php';
 }
 }
