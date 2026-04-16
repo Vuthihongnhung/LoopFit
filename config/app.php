@@ -2,7 +2,7 @@
 // Cấu hình chung cho ứng dụng
 
 // Đường dẫn gốc của dự án (thay đổi nếu cần)
-define('BASE_URL', 'http://localhost:8080/LoopFit/public');
+define('BASE_URL', 'http://localhost:8000');
 
 // Đường dẫn vật lý đến thư mục uploads
 define('UPLOAD_PATH', __DIR__ . '/../public/uploads/');

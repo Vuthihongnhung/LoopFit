@@ -4,7 +4,6 @@ error_reporting(E_ALL);
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
-    $_SESSION['user_id'] = 1;
 }
 
 // ===== CONFIG =====
@@ -69,7 +68,6 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // ===== ROUTING =====
 switch ($url) {
-
     // ===== USER =====
     case '':
     case 'index':
@@ -81,11 +79,6 @@ switch ($url) {
     case 'products':
         $ctrl = new App\Controllers\User\ProductController();
         $ctrl->index();
-        break;
-
-    case (preg_match('#^product/([0-9]+)$#', $url, $matches) ? true : false):
-        $ctrl = new App\Controllers\User\ProductController();
-        $ctrl->show($matches[1]);
         break;
 
     // ===== CART PAGE =====
@@ -109,7 +102,7 @@ switch ($url) {
         $ctrl = new App\Controllers\User\CartController();
         $ctrl->remove();
         break;
-    
+
     case 'api/products':
         $ctrl = new App\Controllers\User\ProductController();
         $ctrl->filterApi();
@@ -132,7 +125,31 @@ switch ($url) {
         $ctrl->index();
         break;
 
-    // ===== AUTH =====
+    // ===== USER AUTH =====
+    case 'login':
+        $ctrl = new App\Controllers\User\AuthController();
+        if ($method === 'POST') {
+            $ctrl->login();
+        } else {
+            $ctrl->loginForm();
+        }
+        break;
+
+    case 'register':
+        $ctrl = new App\Controllers\User\AuthController();
+        if ($method === 'POST') {
+            $ctrl->register();
+        } else {
+            $ctrl->registerForm();
+        }
+        break;
+
+    case 'logout':
+        $ctrl = new App\Controllers\User\AuthController();
+        $ctrl->logout();
+        break;
+
+    // ===== AUTH ADMIN =====
     case 'admin/login':
         $ctrl = new App\Controllers\Admin\AuthController();
         if ($method === 'POST') {
@@ -246,11 +263,19 @@ switch ($url) {
         $ctrl = new App\Controllers\Admin\PromotionController();
         $ctrl->store();
         break;
+
     case 'admin/promotions/delete':
         $ctrl = new App\Controllers\Admin\PromotionController();
         $ctrl->delete();
         break;
-
+    case 'profile':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->profile();
+        break;
+    case 'profile/update':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->updateProfile();
+        break;
     // ===== 404 =====
     default:
         http_response_code(404);
