@@ -250,7 +250,27 @@ switch ($url) {
         $ctrl = new App\Controllers\Admin\PromotionController();
         $ctrl->delete();
         break;
-
+    // ===== CATEGORIES =====
+case 'admin/categories':
+    $ctrl = new App\Controllers\Admin\CategoryController();
+    $ctrl->index();
+    break;
+case 'admin/api/categories':
+    $ctrl = new App\Controllers\Admin\CategoryController();
+    $ctrl->apiGetList();
+    break;
+case 'admin/categories/store':
+    $ctrl = new App\Controllers\Admin\CategoryController();
+    $ctrl->store();
+    break;
+case 'admin/categories/update':
+    $ctrl = new App\Controllers\Admin\CategoryController();
+    $ctrl->update();
+    break;
+case 'admin/categories/delete':
+    $ctrl = new App\Controllers\Admin\CategoryController();
+    $ctrl->delete();
+    break;
     // ===== 404 =====
     default:
         http_response_code(404);

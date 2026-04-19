@@ -7,7 +7,8 @@ class Category extends Model
 {
     public function getAll()
     {
-        $result = $this->conn->query("SELECT * FROM categories ORDER BY id DESC");
+        $sql = "SELECT * FROM categories ORDER BY parent_id, display_order";
+        $result = $this->conn->query($sql);
         $categories = [];
         while ($row = $result->fetch_assoc()) {
             $categories[] = $row;
@@ -23,33 +24,65 @@ class Category extends Model
         return $stmt->get_result()->fetch_assoc();
     }
     
-    public function create($name, $description)
+    public function getBySlug($slug)
     {
-        $stmt = $this->conn->prepare("INSERT INTO categories (name, description) VALUES (?, ?)");
-        $stmt->bind_param("ss", $name, $description);
+        $stmt = $this->conn->prepare("SELECT * FROM categories WHERE slug = ?");
+        $stmt->bind_param("s", $slug);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_assoc();
+    }
+    
+    public function getParents()
+    {
+        $sql = "SELECT * FROM categories WHERE parent_id = 0 ORDER BY display_order";
+        $result = $this->conn->query($sql);
+        $parents = [];
+        while ($row = $result->fetch_assoc()) {
+            $parents[] = $row;
+        }
+        return $parents;
+    }
+    
+    public function getChildren($parentId)
+    {
+        $stmt = $this->conn->prepare("SELECT * FROM categories WHERE parent_id = ? ORDER BY display_order");
+        $stmt->bind_param("i", $parentId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $children = [];
+        while ($row = $result->fetch_assoc()) {
+            $children[] = $row;
+        }
+        return $children;
+    }
+    
+    public function create($name, $slug, $parentId = 0, $icon = null, $displayOrder = 0)
+    {
+        $stmt = $this->conn->prepare("INSERT INTO categories (name, slug, parent_id, icon, display_order) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssisi", $name, $slug, $parentId, $icon, $displayOrder);
         return $stmt->execute();
     }
     
-    public function update($id, $name, $description)
+    public function update($id, $name, $slug, $parentId, $icon = null, $displayOrder = 0)
     {
-        $stmt = $this->conn->prepare("UPDATE categories SET name=?, description=? WHERE id=?");
-        $stmt->bind_param("ssi", $name, $description, $id);
+        $stmt = $this->conn->prepare("UPDATE categories SET name=?, slug=?, parent_id=?, icon=?, display_order=? WHERE id=?");
+        $stmt->bind_param("ssisii", $name, $slug, $parentId, $icon, $displayOrder, $id);
         return $stmt->execute();
     }
     
     public function delete($id)
     {
-        $stmt = $this->conn->prepare("DELETE FROM categories WHERE id=?");
+        $stmt = $this->conn->prepare("DELETE FROM categories WHERE id = ?");
         $stmt->bind_param("i", $id);
         return $stmt->execute();
     }
     
-    public function countProducts($categoryId)
-    {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) as total FROM products WHERE category_id=?");
-        $stmt->bind_param("i", $categoryId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_assoc()['total'];
-    }
+   public function countProducts($categoryId)
+{
+    $stmt = $this->conn->prepare("SELECT COUNT(*) as total FROM products WHERE category_id = ?");
+    $stmt->bind_param("i", $categoryId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_assoc()['total'];
+}
 }

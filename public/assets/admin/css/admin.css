@@ -44,11 +44,10 @@ body {
     font-weight: 700;
     color: white;
 }
-
-    .sidebar-brand i {
-        font-size: 1.8rem;
-        color: #60a5fa;
-    }
+.sidebar-brand i {
+    font-size: 1.8rem;
+    color: #60a5fa;
+}
 
 .sidebar-nav {
     flex: 1;
@@ -67,22 +66,19 @@ body {
     margin: 4px 12px;
     border-radius: 12px;
 }
-
-    .nav-item i {
-        width: 24px;
-        font-size: 1.2rem;
-    }
-
-    .nav-item:hover {
-        background: rgba(96, 165, 250, 0.15);
-        color: white;
-    }
-
-    .nav-item.active {
-        background: #2563eb;
-        color: white;
-        box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
-    }
+.nav-item i {
+    width: 24px;
+    font-size: 1.2rem;
+}
+.nav-item:hover {
+    background: rgba(96, 165, 250, 0.15);
+    color: white;
+}
+.nav-item.active {
+    background: #2563eb;
+    color: white;
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
 
 .sidebar-footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -100,7 +96,7 @@ body {
     min-height: 100vh;
 }
 
-/* Top bar (xanh nhạt) */
+/* Top bar */
 .top-bar {
     background: white;
     padding: 12px 32px;
@@ -129,48 +125,52 @@ body {
     padding: 6px 16px 6px 12px;
     border-radius: 40px;
 }
-
-    .user-info i {
-        font-size: 1.8rem;
-        color: #2563eb;
-    }
-
-    .user-info span {
-        font-weight: 600;
-        color: #0f172a;
-    }
-
+.user-info i {
+    font-size: 1.8rem;
+    color: #2563eb;
+}
+.user-info span {
+    font-weight: 600;
+    color: #0f172a;
+}
 .logout-btn {
     color: #64748b;
     transition: 0.2s;
 }
-
-    .logout-btn:hover {
-        color: #dc2626;
-    }
+.logout-btn:hover {
+    color: #dc2626;
+}
 
 /* Content wrapper */
 .content-wrapper {
     padding: 28px 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Canh giữa nội dung */
+.main-content .content-wrapper {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px;
 }
 
 /* ========== DASHBOARD ========== */
 .page-header {
     margin-bottom: 28px;
 }
+.page-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+.page-header p {
+    color: #475569;
+    margin-top: 6px;
+}
 
-    .page-header h1 {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .page-header p {
-        color: #475569;
-        margin-top: 6px;
-    }
-
-/* Stats grid */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -189,12 +189,10 @@ body {
     transition: all 0.3s;
     border: 1px solid #eef2ff;
 }
-
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
-    }
-
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
+}
 .stat-icon {
     width: 64px;
     height: 64px;
@@ -206,7 +204,6 @@ body {
     font-size: 1.8rem;
     color: #2563eb;
 }
-
 .stat-info h3 {
     font-size: 0.9rem;
     font-weight: 500;
@@ -214,7 +211,6 @@ body {
     margin-bottom: 6px;
     letter-spacing: 0.5px;
 }
-
 .stat-number {
     font-size: 2rem;
     font-weight: 800;
@@ -222,15 +218,15 @@ body {
     line-height: 1.2;
 }
 
-/* ========== CARD & TABLE (dùng cho các trang khác) ========== */
+/* ========== CARD & TABLE (dùng chung) ========== */
 .card {
     background: white;
     border-radius: 24px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     overflow: hidden;
     border: 1px solid #eef2ff;
+    width: 100%;
 }
-
 .card-header {
     padding: 20px 28px;
     border-bottom: 1px solid #eef2ff;
@@ -238,7 +234,6 @@ body {
     justify-content: space-between;
     align-items: center;
 }
-
 .card-body {
     padding: 20px 28px;
 }
@@ -247,27 +242,65 @@ body {
     width: 100%;
     border-collapse: collapse;
 }
+.data-table th {
+    text-align: left;
+    padding: 14px 12px;
+    background: #f8fafc;
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 2px solid #e2e8f0;
+}
+.data-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #eef2ff;
+    vertical-align: middle;
+}
+.data-table tr:hover {
+    background: #f8fafc;
+}
 
-    .data-table th {
-        text-align: left;
-        padding: 14px 12px;
-        background: #f8fafc;
-        font-weight: 600;
-        color: #1e293b;
-        border-bottom: 2px solid #e2e8f0;
-    }
+/* Table responsive */
+.table-responsive {
+    overflow-x: auto;
+}
+.data-table {
+    min-width: 600px;
+}
 
-    .data-table td {
-        padding: 14px 12px;
-        border-bottom: 1px solid #eef2ff;
-        vertical-align: middle;
-    }
+/* ========== PRODUCTS PAGE ========== */
+.products-page .search-box {
+    width: 250px;
+}
+.products-page .search-box input {
+    border-radius: 40px;
+    padding: 8px 16px;
+    border: 1px solid #e2e8f0;
+}
+.products-page .text-center {
+    text-align: center;
+}
+.products-page .image-preview img {
+    max-width: 100px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 4px;
+}
+.products-page .card-body {
+    display: flex;
+    justify-content: center;
+    padding: 20px !important;
+}
+.products-page .table-responsive {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.products-page .data-table {
+    width: 100%;
+    margin: 0 auto;
+}
 
-    .data-table tr:hover {
-        background: #f8fafc;
-    }
-
-/* Buttons */
+/* ========== BUTTONS ========== */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -279,26 +312,21 @@ body {
     cursor: pointer;
     transition: 0.2s;
 }
-
 .btn-primary {
     background: #2563eb;
     color: white;
 }
-
-    .btn-primary:hover {
-        background: #1d4ed8;
-        transform: scale(1.02);
-    }
-
+.btn-primary:hover {
+    background: #1d4ed8;
+    transform: scale(1.02);
+}
 .btn-secondary {
     background: #e2e8f0;
     color: #1e293b;
 }
-
-    .btn-secondary:hover {
-        background: #cbd5e1;
-    }
-
+.btn-secondary:hover {
+    background: #cbd5e1;
+}
 .btn-icon {
     background: none;
     border: none;
@@ -308,13 +336,12 @@ body {
     color: #64748b;
     transition: 0.2s;
 }
+.btn-icon:hover {
+    background: #eef2ff;
+    color: #2563eb;
+}
 
-    .btn-icon:hover {
-        background: #eef2ff;
-        color: #2563eb;
-    }
-
-/* Badge */
+/* ========== BADGES ========== */
 .badge {
     display: inline-block;
     padding: 4px 12px;
@@ -323,38 +350,32 @@ body {
     font-weight: 600;
     text-transform: capitalize;
 }
+.badge.active {
+    background: #dcfce7;
+    color: #166534;
+}
+.badge.banned {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.badge.pending {
+    background: #fef9c3;
+    color: #854d0e;
+}
+.badge.confirmed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.badge.renting {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+.badge.returned {
+    background: #e2e8f0;
+    color: #334155;
+}
 
-    .badge.active {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .badge.banned {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .badge.pending {
-        background: #fef9c3;
-        color: #854d0e;
-    }
-
-    .badge.confirmed {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .badge.renting {
-        background: #e0f2fe;
-        color: #0369a1;
-    }
-
-    .badge.returned {
-        background: #e2e8f0;
-        color: #334155;
-    }
-
-/* Modal */
+/* ========== MODAL ========== */
 .modal {
     display: none;
     position: fixed;
@@ -367,7 +388,6 @@ body {
     justify-content: center;
     z-index: 1100;
 }
-
 .modal-content {
     background: white;
     width: 90%;
@@ -376,7 +396,6 @@ body {
     overflow: hidden;
     animation: fadeInUp 0.2s ease;
 }
-
 .modal-header {
     padding: 20px 24px;
     border-bottom: 1px solid #eef2ff;
@@ -384,52 +403,45 @@ body {
     justify-content: space-between;
     align-items: center;
 }
-
-    .modal-header h2 {
-        font-size: 1.4rem;
-    }
-
+.modal-header h2 {
+    font-size: 1.4rem;
+}
 .close {
     font-size: 1.8rem;
     cursor: pointer;
     line-height: 1;
 }
-
 .modal-body {
     padding: 24px;
 }
 
+/* ========== FORMS ========== */
 .form-group {
     margin-bottom: 20px;
 }
-
-    .form-group label {
-        display: block;
-        font-weight: 500;
-        margin-bottom: 8px;
-        color: #1e293b;
-    }
-
-    .form-group input, .form-group select, .form-group textarea {
-        width: 100%;
-        padding: 12px 14px;
-        border: 1px solid #cbd5e1;
-        border-radius: 20px;
-        font-family: inherit;
-        transition: 0.2s;
-    }
-
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
-        }
-
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #1e293b;
+}
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    font-family: inherit;
+    transition: 0.2s;
+}
+.form-group input:focus, .form-group select:focus, .group textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
+}
 .form-row {
     display: flex;
     gap: 16px;
 }
-
 .form-actions {
     display: flex;
     justify-content: flex-end;
@@ -437,7 +449,7 @@ body {
     margin-top: 24px;
 }
 
-/* Toast message */
+/* ========== TOAST ========== */
 .toast-message {
     position: fixed;
     bottom: 24px;
@@ -449,141 +461,57 @@ body {
     z-index: 1200;
     animation: fadeInOut 3s forwards;
 }
-
 @keyframes fadeInOut {
-    0% {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    10% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    90% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    100% {
-        opacity: 0;
-        transform: translateY(20px);
-        visibility: hidden;
-    }
+    0% { opacity: 0; transform: translateY(20px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(20px); visibility: hidden; }
 }
-
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* Responsive */
+/* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
     }
-
-        .sidebar.open {
-            transform: translateX(0);
-        }
-
+    .sidebar.open {
+        transform: translateX(0);
+    }
     .main-content {
         margin-left: 0;
     }
-
     .menu-toggle {
         display: block;
     }
-
     .stats-grid {
         grid-template-columns: 1fr 1fr;
     }
 }
-/* Căn giữa nội dung chính */
-.content-wrapper {
-    max-width: 1400px;
-    margin: 0 auto;
+/* Căn giữa modal - ưu tiên cao */
+#productModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-}
-
-/* Điều chỉnh bảng responsive */
-.table-responsive {
-    overflow-x: auto;
-}
-
-.data-table {
-    width: 100%;
-    min-width: 600px;
-}
-
-/* Căn giữa card */
-.card {
-    width: 100%;
-}
-/* Canh giữa toàn bộ nội dung */
-.main-content .content-wrapper {
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 20px;
-}
-
-/* Card chiếm full width */
-.card {
-    width: 100%;
-}
-/* Căn giữa bảng sản phẩm */
-.products-page .card-body {
-    display: flex;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1100;
+    align-items: center;
     justify-content: center;
 }
 
-.products-page .data-table {
-    max-width: 1200px;
+#productModal .modal-content {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
     margin: 0 auto;
-}
-/* Căn giữa bảng sản phẩm */
-.products-page .card-body {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-}
-
-.products-page .table-responsive {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.products-page .data-table {
-    width: 100%;
-    margin: 0 auto;
-}
-/* Căn giữa và tạo khoảng cách cho bảng sản phẩm */
-.products-page .card-body {
-    padding: 20px !important;
-}
-
-.products-page .table-responsive {
-    overflow-x: auto;
-    margin: 0 auto;
-}
-
-.products-page .data-table {
-    width: 100%;
-    min-width: 600px;
-}
-
-/* Đẩy toàn bộ nội dung chính vào giữa */
-.content-wrapper {
-    padding-left: 20px !important;
-    padding-right: 20px !important;
+    width: 90%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
