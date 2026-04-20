@@ -4,7 +4,7 @@ error_reporting(E_ALL);
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
-    $_SESSION['user_id'] = 1;
+    //$_SESSION['user_id'] = 1;
 }
 
 // ===== CONFIG =====
@@ -83,9 +83,67 @@ switch ($url) {
         $ctrl->index();
         break;
 
-    case (preg_match('#^product/([0-9]+)$#', $url, $matches) ? true : false):
-        $ctrl = new App\Controllers\User\ProductController();
-        $ctrl->show($matches[1]);
+            // ===== USER AUTH =====
+    case 'login':
+        $ctrl = new App\Controllers\User\AuthController();
+        if ($method === 'POST') {
+            $ctrl->login();          // xử lý đăng nhập
+        } else {
+            $ctrl->loginForm();      // hiển thị form login
+        }
+        break;
+
+    case 'register':
+        $ctrl = new App\Controllers\User\AuthController();
+        if ($method === 'POST') {
+            $ctrl->register();       // xử lý đăng ký
+        } else {
+            $ctrl->registerForm();   // hiển thị form register
+        }
+        break;
+
+    case 'logout':
+        $ctrl = new App\Controllers\User\AuthController();
+        $ctrl->logout();
+        break;
+
+        // Profile
+    case 'profile':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->profile();
+        break;
+
+    // API update profile
+    case 'api/user/update-profile':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->updateProfile();
+        break;
+
+    // API change password
+    case 'api/user/change-password':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->changePassword();
+        break;
+
+    case 'api/addresses':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->getAddresses();
+        break;
+    case 'api/address/add':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->addAddress();
+        break;
+    case 'api/address/update':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->updateAddress();
+        break;
+    case 'api/address/delete':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->deleteAddress();
+        break;
+    case 'api/address/set-default':
+        $ctrl = new App\Controllers\User\UserController();
+        $ctrl->setDefaultAddress();
         break;
 
     // ===== CART PAGE =====
@@ -109,6 +167,11 @@ switch ($url) {
         $ctrl = new App\Controllers\User\CartController();
         $ctrl->remove();
         break;
+
+    case 'api/cart/count':
+        $ctrl = new App\Controllers\User\CartController();
+        $ctrl->count();
+        break;
     
     case 'api/products':
         $ctrl = new App\Controllers\User\ProductController();
@@ -124,6 +187,11 @@ switch ($url) {
     case 'checkout/process':
         $ctrl = new App\Controllers\User\CheckoutController();
         $ctrl->process();
+        break;
+
+    case 'checkout/apply-voucher':
+        $ctrl = new App\Controllers\User\CheckoutController();
+        $ctrl->applyVoucher();
         break;
 
     // ===== USER ORDERS =====
@@ -248,6 +316,28 @@ switch ($url) {
         break;
     case 'admin/promotions/delete':
         $ctrl = new App\Controllers\Admin\PromotionController();
+        $ctrl->delete();
+        break;
+
+     // ===== CATEGORIES =====
+    case 'admin/categories':
+        $ctrl = new App\Controllers\Admin\CategoryController();
+        $ctrl->index();
+        break;
+    case 'admin/api/categories':
+        $ctrl = new App\Controllers\Admin\CategoryController();
+        $ctrl->apiGetList();
+        break;
+    case 'admin/categories/store':
+        $ctrl = new App\Controllers\Admin\CategoryController();
+        $ctrl->store();
+        break;
+    case 'admin/categories/update':
+        $ctrl = new App\Controllers\Admin\CategoryController();
+        $ctrl->update();
+        break;
+    case 'admin/categories/delete':
+        $ctrl = new App\Controllers\Admin\CategoryController();
         $ctrl->delete();
         break;
 

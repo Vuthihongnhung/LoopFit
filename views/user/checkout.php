@@ -1,120 +1,136 @@
-<script>
-window.cart = <?= json_encode($items ?? []) ?>;
-</script>
+<div class="checkout-wrapper">
+    <div class="checkout-container">
+        <h1 class="checkout-title">Thanh toán</h1>
+        <form id="checkout-form" method="POST" action="/LoopFit/public/checkout/place-order">
+            <input type="hidden" name="cart_ids" value="<?= htmlspecialchars($_GET['cart_ids'] ?? '') ?>">
+            <input type="hidden" id="total_rent_value" value="<?= $total_rent ?? 0 ?>">
+            <input type="hidden" id="total_deposit_value" value="<?= $total_deposit ?? 0 ?>">
 
-<div class="checkout-container">
-    <h2 class="checkout-title">Thanh toán đơn thuê</h2>
-
-    <?php if (empty($items)): ?>
-        <div style="text-align:center; padding:40px;">
-            <p>🛒 Giỏ hàng trống</p>
-            <a href="/LoopFit/public/products" style="color:#718BBC;">Đi thuê ngay</a>
-        </div>
-    <?php else: ?>
-
-    <form method="POST" action="/LoopFit/public/checkout/process">
-
-    <div style="display:flex; gap:30px;">
-
-        <!-- LEFT -->
-        <div style="flex:1;">
-
-            <div class="checkout-box">
-
-                <h3>Thông tin người thuê</h3>
-
-                <input type="text" name="customer_name" placeholder="Họ và tên" required>
-                <input type="text" name="customer_phone" placeholder="Số điện thoại" required>
-
-                <h3>Địa chỉ nhận đồ</h3>
-
-                <select name="address_id" required>
-                    <?php foreach ($addresses as $addr): ?>
-                        <option value="<?= (int)$addr['id'] ?>">
-                            <?= htmlspecialchars($addr['name']) ?> - 
-                            <?= htmlspecialchars($addr['phone']) ?> - 
-                            <?= htmlspecialchars($addr['address']) ?>
-                            <?= $addr['is_default'] ? '(Mặc định)' : '' ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <a href="/LoopFit/public/profile" style="font-size:14px;">
-                    + Thêm địa chỉ mới
-                </a>
-
-                <h3 style="margin-top:20px;">Mã giảm giá</h3>
-
-                <select name="promo_code" id="promo-select">
-                    <option value="">-- Không dùng mã --</option>
-
-                    <?php foreach ($promotions as $promo): ?>
-                        <option value="<?= htmlspecialchars($promo['code']) ?>"
-                                data-percent="<?= (int)$promo['discount_percent'] ?>">
-                            <?= htmlspecialchars($promo['code']) ?>
-                            (<?= (int)$promo['discount_percent'] ?>%)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-                <button class="btn-submit" type="submit">
-                    Đặt thuê
-                </button>
-
-            </div>
-
-        </div>
-
-        <!-- RIGHT -->
-        <div style="width:350px;">
-
-            <div class="checkout-box">
-
-                <h3>Đơn hàng</h3>
-
-                <?php foreach ($items as $item): ?>
-                    <div class="order-item">
-
-                        <strong><?= htmlspecialchars($item['name']) ?></strong><br>
-
-                        Size: <?= htmlspecialchars($item['size'] ?? 'N/A') ?><br>
-                        SL: <?= (int)$item['quantity'] ?><br>
-
-                        <?= date('d/m/Y', strtotime($item['rent_date'])) ?>
-                        →
-                        <?= date('d/m/Y', strtotime($item['return_date'])) ?><br>
-
-                        <?= (int)$item['days'] ?> ngày<br>
-
-                        <b><?= number_format($item['item_total'], 0, ',', '.') ?>đ</b>
-
+            <div class="checkout-grid">
+                <!-- Cột trái -->
+                <div class="checkout-info">
+                    <!-- ========== ĐỊA CHỈ NHẬN HÀNG (LOAD AJAX) ========== -->
+                <div class="checkout-section">
+                    <h3>Địa chỉ nhận hàng</h3>
+                    <div id="checkout-address-list" class="address-list">
+                        <div class="loading">Đang tải...</div>
                     </div>
-                <?php endforeach; ?>
-
-                <div class="total-box">
-                    Tổng tiền:
-                    <b id="cart-total"><?= $total ?></b>
+                    <button type="button" id="checkout-add-address" class="btn-link" style="margin-top: 12px;">+ Thêm địa chỉ mới</button>
                 </div>
 
-                <div class="total-box">
-                    Giảm giá:
-                    <b id="discount-amount">0</b>
+                <!-- Modal thêm/sửa địa chỉ (copy từ profile.php) -->
+                <div id="address-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="modal-close">&times;</span>
+                        <h3 id="modal-title">Thêm địa chỉ mới</h3>
+                        <input type="hidden" id="edit-address-id" value="">
+                        <div class="form-group">
+                            <label>Họ tên người nhận</label>
+                            <input type="text" id="addr-fullname" class="form-control" placeholder="Nguyễn Văn A">
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input type="text" id="addr-phone" class="form-control" placeholder="0901234567">
+                        </div>
+                        <div class="form-group">
+                            <label>Địa chỉ chi tiết</label>
+                            <textarea id="addr-line" rows="3" class="form-control" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" id="addr-default"> Đặt làm địa chỉ mặc định</label>
+                        </div>
+                        <div style="text-align:right;">
+                            <button id="modal-close-btn" class="btn-secondary">Hủy</button>
+                            <button id="modal-save" class="btn-primary">Lưu</button>
+                        </div>
+                    </div>
                 </div>
 
-                <hr>
+                    <!-- Mã giảm giá -->
+                    <div class="checkout-section">
+                        <h3>Mã giảm giá</h3>
+                        <?php if (!empty($vouchers)): ?>
+                            <div class="voucher-group">
+                                <select name="voucher_code" id="voucher-select" class="voucher-select">
+                                    <option value="">-- Chọn mã giảm giá --</option>
+                                    <?php foreach ($vouchers as $v): ?>
+                                        <?php 
+                                            $discountText = isset($v['discount_percent']) && $v['discount_percent'] 
+                                                ? "Giảm {$v['discount_percent']}%" 
+                                                : "Giảm " . number_format($v['discount_amount'] ?? 0, 0, ',', '.') . "đ";
+                                        ?>
+                                        <option value="<?= htmlspecialchars($v['code']) ?>"
+                                                data-discount-percent="<?= $v['discount_percent'] ?? 0 ?>"
+                                                data-discount-amount="<?= $v['discount_amount'] ?? 0 ?>">
+                                            <?= htmlspecialchars($v['code']) ?> - <?= $discountText ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="button" id="apply-voucher" class="btn-apply">Áp dụng</button>
+                            </div>
+                        <?php else: ?>
+                            <p>Hiện chưa có mã giảm giá nào.</p>
+                        <?php endif; ?>
+                        <div id="voucher-message" class="message"></div>
+                    </div>
 
-                <div class="final">
-                    Thanh toán:
-                    <span id="final-total"><?= $total ?></span>
+                    <!-- Phương thức thanh toán -->
+                    <div class="checkout-section">
+                        <h3>Phương thức thanh toán</h3>
+                        <div class="payment-methods">
+                            <label class="payment-method">
+                                <input type="radio" name="payment_method" value="cod" checked> Thanh toán khi nhận hàng (COD)
+                            </label>
+                            <label class="payment-method">
+                                <input type="radio" name="payment_method" value="bank"> Chuyển khoản ngân hàng
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Ghi chú -->
+                    <div class="checkout-section">
+                        <h3>Ghi chú</h3>
+                        <textarea name="notes" rows="3" placeholder="Ghi chú cho shop..."></textarea>
+                    </div>
                 </div>
 
+                <!-- Cột phải -->
+                <div class="checkout-order">
+                    <div class="order-summary">
+                        <h3>Đơn hàng của bạn</h3>
+                        <div class="order-items">
+                            <?php foreach ($items as $item): ?>
+                                <div class="order-item">
+                                    <div class="item-info">
+                                        <div class="item-name"><?= htmlspecialchars($item['name']) ?></div>
+                                        <div class="item-meta">Size: <?= $item['size'] ?>, Màu: <?= $item['color'] ?></div>
+                                        <div class="item-days"><?= $item['days'] ?> ngày</div>
+                                        <div class="item-qty">x<?= $item['quantity'] ?></div>
+                                    </div>
+                                    <div class="item-price"><?= number_format($item['subtotal'], 0, ',', '.') ?>đ</div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="order-total-line">
+                            <span>Tạm tính (tiền thuê)</span>
+                            <span id="total-rent"><?= number_format($total_rent, 0, ',', '.') ?>đ</span>
+                        </div>
+                        <div class="order-total-line">
+                            <span>Tiền cọc</span>
+                            <span id="total-deposit"><?= number_format($total_deposit, 0, ',', '.') ?>đ</span>
+                        </div>
+                        <div class="order-total-line discount-row" style="display:none;">
+                            <span>Giảm giá</span>
+                            <span id="discount-amount">0đ</span>
+                        </div>
+                        <div class="order-total-line final-total">
+                            <span>Tổng cộng</span>
+                            <span id="final-total"><?= number_format($total_rent + $total_deposit, 0, ',', '.') ?>đ</span>
+                        </div>
+                        <button type="submit" class="btn-submit">Đặt hàng</button>
+                    </div>
+                </div>
             </div>
-
-        </div>
-
+        </form>
     </div>
-
-    </form>
-
-    <?php endif; ?>
 </div>

@@ -6,7 +6,7 @@
     <title><?php echo $pageTitle ?? 'Admin Panel'; ?> | LoopFit</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/admin/css/admin.css">
+    <link rel="stylesheet" href="http://localhost:8080/LoopFit/public/assets/admin/css/admin.css">
 </head>
 <body>
     <div class="app">
@@ -31,6 +31,9 @@
                 </a>
                 <a href="<?php echo BASE_URL; ?>/index.php?url=admin/promotions" class="nav-item <?php echo ($activeMenu === 'promotions') ? 'active' : ''; ?>">
                     <i class="fas fa-tags"></i> <span>Khuyến mãi</span>
+                </a>
+                <a href="<?php echo BASE_URL; ?>/index.php?url=admin/categories" class="nav-item <?php echo ($activeMenu === 'categories') ? 'active' : ''; ?>">
+                    <i class="fas fa-folder-tree"></i> <span>Danh mục</span>
                 </a>
             </nav>
             <div class="sidebar-footer">

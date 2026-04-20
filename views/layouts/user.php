@@ -18,11 +18,14 @@
 </main>
 
 <?php include __DIR__ . '/../components/footer.php'; ?>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="/LoopFit/public/assets/user/js/main.js"></script>
 <script src="/LoopFit/public/assets/user/js/cart.js"></script>
 <script src="/LoopFit/public/assets/user/js/product.js"></script>
 <script src="/LoopFit/public/assets/user/js/checkout.js"></script>
 <script src="/LoopFit/public/assets/user/js/filter.js"></script>
+<script src="/LoopFit/public/assets/user/js/auth.js"></script>
+<script src="/LoopFit/public/assets/user/js/profile.js"></script>
 
 </body>
 

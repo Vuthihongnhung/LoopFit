@@ -27,4 +27,25 @@ class OrderItem extends Model
 
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
+
+    public function add($data)
+    {
+        $stmt = $this->conn->prepare("
+            INSERT INTO order_details 
+            (order_id, product_id, quantity, price, color, size, rent_date, return_date, days) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->bind_param("iiidssssi",
+            $data['order_id'],
+            $data['product_id'],
+            $data['quantity'],
+            $data['price'],
+            $data['color'],
+            $data['size'],
+            $data['rent_date'],
+            $data['return_date'],
+            $data['days']
+        );
+        return $stmt->execute();
+    }
 }
