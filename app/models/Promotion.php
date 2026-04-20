@@ -50,5 +50,32 @@ class Promotion extends Model
         return $stmt->execute();
     }
 
+    // Trong app/models/Promotion.php
+public function getActiveVouchers()
+{
+    $sql = "SELECT * FROM promotions 
+            WHERE start_date <= NOW() AND end_date >= NOW()
+            ORDER BY 
+                CASE 
+                    WHEN discount_percent IS NOT NULL AND discount_percent > 0 THEN discount_percent 
+                    ELSE 0 
+                END DESC,
+                discount_amount DESC";
+    $result = $this->conn->query($sql);
+    if (!$result) return [];
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+public function getVoucherByCode($code)
+{
+    $code = $this->conn->real_escape_string($code);
+    $sql = "SELECT * FROM promotions 
+            WHERE code = '$code' 
+              AND start_date <= NOW() 
+              AND end_date >= NOW()";
+    $result = $this->conn->query($sql);
+    if (!$result || $result->num_rows === 0) return null;
+    return $result->fetch_assoc();
+}
     
 }

@@ -1,89 +1,54 @@
-<div class="loopfit-filter-row">
-    <form method="GET" action="/LoopFit/public/products" class="filter-flex-wrapper">
+<?php if (!empty($breadcrumb)): ?>
+<div class="breadcrumb-wrapper">
+    <div class="breadcrumb">
+        <a href="/LoopFit/public/home">Trang chủ</a>
+        <?php foreach ($breadcrumb as $index => $crumb): ?>
+            <span class="separator">›</span>
+            <?php if ($index === array_key_last($breadcrumb)): ?>
+                <span class="current"><?= htmlspecialchars($crumb['name']) ?></span>
+            <?php else: ?>
+                <a href="/LoopFit/public/products?category=<?= $crumb['id'] ?>"><?= htmlspecialchars($crumb['name']) ?></a>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
 
-        <span class="filter-text">Bộ lọc:</span>
+<div class="filter-wrapper">
+    <div class="filter-header">
+        <span class="filter-title">Bộ lọc</span>
+        <button type="button" id="clear-filters" class="clear-btn">Xóa tất cả</button>
+    </div>
 
-        <div class="filter-box">
-            <select name="gender" id="filter-gender">
-                <option value="all">Tất cả giới tính</option>
-                <option value="male">Nam</option>
-                <option value="female">Nữ</option>
-            </select>
+    <div class="filter-row">
+        <!-- Giới tính -->
+        <div class="filter-col">
+            <div class="filter-label">Giới tính</div>
+            <div class="filter-chips" data-filter="gender">
+                <button type="button" data-value="all" class="chip active">Tất cả</button>
+                <button type="button" data-value="male" class="chip">Nam</button>
+                <button type="button" data-value="female" class="chip">Nữ</button>
+            </div>
         </div>
 
-        <div class="filter-box">
-            <select name="price" id="filter-price">
-                <option value="all">Tất cả giá</option>
-                <option value="0-100000">Dưới 100k</option>
-                <option value="100000-300000">100k - 300k</option>
-                <option value="300000-up">Trên 300k</option>
-            </select>
+        <!-- Khoảng giá -->
+        <div class="filter-col">
+            <div class="filter-label">Khoảng giá</div>
+            <div class="filter-chips" data-filter="price">
+                <button type="button" data-value="all" class="chip active">Tất cả</button>
+                <button type="button" data-value="0-100000" class="chip">Dưới 100.000đ</button>
+                <button type="button" data-value="100000-300000" class="chip">100.000đ - 300.000đ</button>
+                <button type="button" data-value="300000-up" class="chip">Trên 300.000đ</button>
+            </div>
         </div>
-
-        <a href="/LoopFit/public/products" class="filter-reset">Xóa lọc</a>
-
-    </form>
+    </div>
+    <input type="hidden" id="filter-category" value="<?= htmlspecialchars($_GET['category'] ?? '') ?>">
 </div>
 
 <div class="container" style="padding: 30px;">
-
-    <h2>Sản phẩm</h2>
-
-    <?php if (!empty($products)): ?>
-
-        <div class="product-list" style="
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-        ">
-
-            <?php foreach ($products as $product): ?>
-
-                <?php
-                    $id    = $product['id'] ?? 0;
-                    $name  = $product['name'] ?? 'Sản phẩm';
-                    $price = $product['price'] ?? 0;
-                    $image = $product['image'] ?? 'default.jpg';
-                ?>
-
-                <div class="product-card">
-
-                    <!-- CLICK VÀO DETAIL -->
-                    <a href="/LoopFit/public/product/<?= $id ?>" style="text-decoration:none; color:inherit;">
-
-                        <div class="product-image">
-                            <img 
-                                src="/LoopFit/public/uploads/products/<?= htmlspecialchars($image) ?>" 
-                                alt="<?= htmlspecialchars($name) ?>"
-                                style="width:100%; height:250px; object-fit:cover;"
-                            >
-                        </div>
-
-                        <div class="product-info">
-                            <h3><?= htmlspecialchars($name) ?></h3>
-
-                            <p class="price">
-                                <?= number_format((float)$price, 0, ',', '.') ?>đ 
-                                <span>/ ngày</span>
-                            </p>
-                        </div>
-
-                    </a>
-
-                    <!-- BUTTON -->
-                    <button class="rent-btn"
-                        onclick="goToDetail(<?= $id ?>)">
-                        Thuê ngay
-                    </button>
-
-                </div>
-
-            <?php endforeach; ?>
-
-        </div>
-
-    <?php endif; ?>
-
+    <div class="product-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+        <?php foreach ($products as $product): ?>
+            <?php include __DIR__ . '/../components/product-card.php'; ?>
+        <?php endforeach; ?>
+    </div>
 </div>
-
-

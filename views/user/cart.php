@@ -1,123 +1,88 @@
-<?php if (!isset($cartItems)) $cartItems = []; ?>
-
-<div class="container" style="padding:30px;">
-    <h2>Giỏ hàng</h2>
-
-    <div class="cart-container">
-
-        <!-- HEADER -->
-        <div class="cart-header">
-            <div></div>
-            <div>Sản phẩm</div>
-            <div>Đơn giá</div>
-            <div>Số lượng</div>
-            <div>Thành tiền</div>
-            <div></div>
+<div class="cart-wrapper">
+    <div class="cart-title">Giỏ hàng của bạn</div>
+    <?php if (empty($cart)): ?>
+        <div class="empty-cart">
+            <p>Giỏ hàng trống. <a href="/LoopFit/public/products">Mua ngay</a></p>
         </div>
-
-        <!-- ITEMS -->
-        <?php if (!empty($cartItems)): ?>
-            <?php foreach ($cartItems as $item): ?>
-
-                <?php $cartId = (int)$item['cart_id']; ?>
-
-                <div class="cart-item"
-                     id="cart-item-<?= $cartId ?>"
-                     data-price="<?= (float)$item['price'] ?>">
-
-                    <!-- IMAGE -->
-                    <div class="cart-img">
-                        <img src="/LoopFit/public/uploads/products/<?= htmlspecialchars($item['image']) ?>"
-                             alt="<?= htmlspecialchars($item['name']) ?>"
-                             style="width:80px;">
-                    </div>
-
-                    <!-- NAME -->
-                    <div class="cart-name">
-                        <b><?= htmlspecialchars($item['name']) ?></b>
-                        <br>
-                        <small>Size: <?= htmlspecialchars($item['size'] ?? 'N/A') ?></small>
-                        <br>
-                        <small>Màu: <?= htmlspecialchars($item['color'] ?? '') ?></small>
-                        <br>
-
-                        <small>
-                            <?php if (!empty($item['rent_date']) && !empty($item['return_date'])): ?>
-                                <?= date('d/m/Y', strtotime($item['rent_date'])) ?>
-                                →
-                                <?= date('d/m/Y', strtotime($item['return_date'])) ?>
-                            <?php endif; ?>
-                        </small>
-                    </div>
-
-                    <!-- PRICE -->
-                    <div class="cart-price">
-                        <?= number_format((float)$item['price'], 0, ',', '.') ?>đ
-                    </div>
-
-                    <!-- QUANTITY -->
-                    <div class="qty-box">
-                        <button onclick="updateQuantity(<?= $cartId ?>, -1)">-</button>
-
-                        <span id="qty-<?= $cartId ?>">
-                            <?= (int)$item['quantity'] ?>
-                        </span>
-
-                        <button onclick="updateQuantity(<?= $cartId ?>, 1)">+</button>
-                    </div>
-
-                    <!-- TOTAL -->
-                    <div class="cart-total" id="total-<?= $cartId ?>">
-                        <?= number_format($item['price'] * $item['quantity'], 0, ',', '.') ?>đ
-                    </div>
-
-                    <!-- REMOVE -->
-                    <div class="remove-btn"
-                         onclick="removeFromCart(<?= $cartId ?>)">
-                        ❌ Xóa
-                    </div>
-
+    <?php else: ?>
+        <div class="cart-content">
+            <div class="cart-items">
+                <div class="cart-header">
+                    <div class="col-checkbox"><input type="checkbox" id="select-all"></div>
+                    <div class="col-product">Sản phẩm</div>
+                    <div class="col-price">Đơn giá</div>
+                    <div class="col-qty">Số lượng</div>
+                    <div class="col-total">Thành tiền</div>
+                    <div class="col-action"></div>
                 </div>
-
-            <?php endforeach; ?>
-        <?php else: ?>
-
-            <!-- EMPTY -->
-            <div class="empty-cart" style="text-align:center; padding:40px;">
-                <p style="font-size:18px;">🛒 Giỏ hàng của bạn đang trống</p>
-                <a href="/LoopFit/public/products"
-                   style="color:#718BBC; text-decoration:none; font-weight:bold;">
-                    Đi thuê ngay
-                </a>
-            </div>
-
-        <?php endif; ?>
-
-    </div>
-
-    <!-- TOTAL -->
-    <div class="cart-summary" style="margin-top:30px;">
-        <h3>
-            Tổng:
-            <span id="cart-total">
-                <?php
-                    $total = 0;
-
-                    if (!empty($cartItems)) {
-                        foreach ($cartItems as $item) {
-                            $total += (float)$item['price'] * (int)$item['quantity'];
-                        }
-                    }
-
-                    echo number_format($total, 0, ',', '.') . 'đ';
+                <?php 
+                $totalAll = 0;
+                $totalDeposit = 0;
+                foreach ($cart as $item):
+                    $cartId = $item['cart_id'];
+                    $name = $item['name'];
+                    $price = (float)$item['price'];
+                    $depositPrice = (float)($item['deposit_price'] ?? $price * 0.3);
+                    $quantity = (int)$item['quantity'];
+                    $days = (int)($item['days'] ?? 1);
+                    $size = $item['size'];
+                    $color = $item['color'] ?? '';
+                    $rentDate = $item['rent_date'];
+                    $returnDate = $item['return_date'];
+                    $imageRaw = $item['image'];
+                    $firstImage = trim(explode(',', $imageRaw)[0] ?? '');
+                    $imgUrl = '/LoopFit/public/assets/uploads/products/' . ($firstImage ?: 'no-image.png');
+                    $subtotal = $price * $quantity * $days;
+                    $depositTotal = $depositPrice * $quantity;
+                    $totalAll += $subtotal;
+                    $totalDeposit += $depositTotal;
                 ?>
-            </span>
-        </h3>
-
-        <?php if (!empty($cartItems)): ?>
-            <a href="/LoopFit/public/checkout">
-                <button class="checkout-btn">Thanh toán</button>
-            </a>
-        <?php endif; ?>
-    </div>
+                    <div class="cart-item" data-cart-id="<?= $cartId ?>" data-price="<?= $price ?>" data-days="<?= $days ?>" data-deposit-price="<?= $depositPrice ?>">
+                        <div class="col-checkbox"><input type="checkbox" class="item-select" data-cart-id="<?= $cartId ?>" checked></div>
+                        <div class="col-product">
+                            <div class="cart-product">
+                                <img src="<?= $imgUrl ?>" alt="<?= htmlspecialchars($name) ?>">
+                                <div class="cart-info">
+                                    <div class="cart-name"><?= htmlspecialchars($name) ?></div>
+                                    <div class="cart-attr">Size: <?= htmlspecialchars($size) ?> | Màu: <?= htmlspecialchars($color) ?></div>
+                                    <div class="cart-attr">Ngày thuê: <?= htmlspecialchars($rentDate) ?></div>
+                                    <div class="cart-attr">Ngày trả: <?= htmlspecialchars($returnDate) ?></div>
+                                    <div class="cart-attr">Số ngày: <?= $days ?></div>
+                                    <div class="cart-deposit">Cọc: <?= number_format($depositTotal, 0, ',', '.') ?>đ</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-price"><?= number_format($price, 0, ',', '.') ?>đ <small>/ngày</small></div>
+                        <div class="col-qty">
+                            <div class="cart-quantity">
+                                <button class="qty-btn" onclick="updateQuantity(<?= $cartId ?>, -1)">-</button>
+                                <span id="qty-<?= $cartId ?>"><?= $quantity ?></span>
+                                <button class="qty-btn" onclick="updateQuantity(<?= $cartId ?>, 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="col-total" id="total-<?= $cartId ?>"><?= number_format($subtotal, 0, ',', '.') ?>đ</div>
+                        <div class="col-action">
+                            <button class="cart-remove" onclick="removeFromCart(<?= $cartId ?>)" title="Xóa">✕</button>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="cart-summary">
+                <div class="summary-title">Thông tin đơn hàng</div>
+                <div class="summary-row">
+                    <span>Tạm tính (tiền thuê)</span>
+                    <span id="cart-total-temp"><?= number_format($totalAll, 0, ',', '.') ?>đ</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tiền cọc</span>
+                    <span id="cart-deposit-total"><?= number_format($totalDeposit, 0, ',', '.') ?>đ</span>
+                </div>
+                <div class="summary-total">
+                    <span>Tổng cộng</span>
+                    <span id="cart-total-all"><?= number_format($totalAll + $totalDeposit, 0, ',', '.') ?>đ</span>
+                </div>
+                <button class="btn-checkout" id="checkout-selected">Đặt hàng (đã chọn)</button>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>

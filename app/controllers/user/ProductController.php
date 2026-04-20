@@ -8,63 +8,62 @@ use App\Models\Product;
 class ProductController extends Controller
 {
     public function index()
-    {
-        $style       = $_GET['style'] ?? null;
-        $gender      = $_GET['gender'] ?? 'all';
-        $price_range = $_GET['price'] ?? 'all';
-        $category_id = $_GET['category'] ?? null;
-
-        $productModel = new Product(); 
-        
-        $products = $productModel->getFilteredProducts(
-            $category_id,
-            $gender,
-            $price_range,
-            $style
-        );
-
-        // ✅ DÙNG view() thay vì render()
-        return $this->view('user.products', [
-            'products'       => $products,
-            'current_style'  => $style,
-            'current_gender' => $gender,
-            'current_price'  => $price_range,
-            'current_cat'    => $category_id
-        ]);
-    }
-
-    public function show($id)
 {
-    $productModel = new Product();
-    $product = $productModel->getById($id);
+    $categoryId = $_GET['category'] ?? null;
+    $gender     = $_GET['gender'] ?? 'all';
+    $priceRange = $_GET['price'] ?? 'all';
+    $sort       = $_GET['sort'] ?? 'default';
 
-    // 🔥 CHẶN NULL
-    if (!$product) {
-        die('Không tìm thấy sản phẩm');
+    $productModel = new Product();
+    $products = $productModel->filterProducts($categoryId, $gender, $priceRange, $sort);
+
+    // Lấy thông tin breadcrumb nếu có category
+    $breadcrumb = [];
+    if ($categoryId) {
+        $categoryModel = new \App\Models\Category();
+        $breadcrumb = $categoryModel->getBreadcrumb($categoryId);
     }
 
-    return $this->view('user.product_detail', [
-        'product' => $product
+    $this->view('user/products', [
+        'products'       => $products,
+        'current_gender' => $gender,
+        'current_price'  => $priceRange,
+        'current_cat'    => $categoryId,
+        'breadcrumb'     => $breadcrumb
     ]);
 }
 
-public function filterApi()
+   public function show($id)
 {
-    header('Content-Type: application/json');
+    $productModel = new Product();
+    $product = $productModel->getById($id);
+    if (!$product) {
+        http_response_code(404);
+        echo "Sản phẩm không tồn tại";
+        exit;
+    }
+    // Lấy sản phẩm cùng danh mục (dựa trên category_id)
+    $related = [];
+    if (!empty($product['category_id'])) {
+        $related = $productModel->getRelatedProducts($product['category_id'], $id, 4);
+    }
+    $this->view('user/product_detail', [
+        'product' => $product,
+        'relatedProducts' => $related
+    ]);
+}
 
+   public function filterApi()
+{
+    $category = $_GET['category'] ?? null;
     $gender = $_GET['gender'] ?? 'all';
-    $price  = $_GET['price'] ?? 'all';
+    $price = $_GET['price'] ?? 'all';
 
     $productModel = new Product();
+    $products = $productModel->filterProducts($category, $gender, $price, 'default');
 
-    $products = $productModel->getFilteredProducts(
-        null,
-        $gender,
-        $price,
-        null
-    );
-
+    header('Content-Type: application/json');
     echo json_encode($products);
-    exit; // 🔥 QUAN TRỌNG
+    exit;
 }
 }

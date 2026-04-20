@@ -70,3 +70,7 @@ document.addEventListener('click', function (e) {
         selectedSize = e.target.dataset.size || e.target.innerText.trim();
     }
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    updateCartCount();
+});
