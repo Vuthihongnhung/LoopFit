@@ -136,137 +136,181 @@ class CheckoutController extends Controller
 }
 
     // Xử lý đặt hàng
-    public function process() {
-    header('Content-Type: application/json');
-    
-    if (!isset($_SESSION['user_id'])) {
-        echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập']);
-        return;
+    public function process()
+    {
+        return $this->processCheckout();
     }
-    
-    $userId = $_SESSION['user_id'];
-    $addressId = (int)($_POST['address_id'] ?? 0);
-    $paymentMethod = $_POST['payment_method'] ?? 'cod';
-    $notes = trim($_POST['notes'] ?? '');
-    $discount = (float)($_POST['discount'] ?? 0);
-    $cartIds = $_POST['cart_ids'] ?? '';
-    
-    if ($addressId <= 0) {
-        echo json_encode(['success' => false, 'message' => 'Chưa chọn địa chỉ nhận hàng']);
-        return;
-    }
-    
-    if (empty($cartIds)) {
-        echo json_encode(['success' => false, 'message' => 'Không có sản phẩm nào được chọn']);
-        return;
-    }
-    
-    $cartIdArray = explode(',', $cartIds);
-    $cartModel = new \App\Models\Cart();
-    $items = [];
-    
-    foreach ($cartIdArray as $cartId) {
-        $item = $cartModel->findById((int)$cartId, $userId);
-        if ($item) {
-            $productModel = new \App\Models\Product();
-            // SỬA LỖI Ở ĐÂY: getdById -> getById
+
+    public function processCheckout()
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $userId = (int)($_SESSION['user']['id'] ?? $_SESSION['user_id'] ?? 0);
+        if ($userId <= 0) {
+            echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Vui lòng đăng nhập'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $addressId = (int)($_POST['address_id'] ?? 0);
+        $paymentMethod = $this->normalizePaymentMethod($_POST['payment_method'] ?? 'cash');
+        $notes = trim($_POST['notes'] ?? '');
+        $discount = (float)($_POST['discount'] ?? 0);
+        $cartIds = $_POST['cart_ids'] ?? '';
+
+        if ($addressId <= 0) {
+            echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Chưa chọn địa chỉ nhận hàng'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        if (empty($cartIds)) {
+            echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Không có sản phẩm nào được chọn'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $cartIdArray = array_filter(array_map('intval', explode(',', $cartIds)));
+        $cartModel = new \App\Models\Cart();
+        $productModel = new \App\Models\Product();
+        $items = [];
+
+        foreach ($cartIdArray as $cartId) {
+            $item = $cartModel->findById($cartId, $userId);
+            if (!$item) continue;
+
             $product = $productModel->getById($item['product_id']);
-            if ($product) {
-                $item['name'] = $product['name'];
-                $item['price'] = $product['price'];
-                $item['deposit_price'] = $product['deposit_price'] ?? ($product['price'] * 0.3);
-                $item['image'] = $product['image'];
-                $items[] = $item;
+            if (!$product) continue;
+
+            $item['name'] = $product['name'];
+            $item['price'] = (float)$product['price'];
+            $item['deposit_price'] = (float)($product['deposit_price'] ?? ($product['price'] * 0.3));
+            $item['image'] = $product['image'] ?? null;
+            $items[] = $item;
+        }
+
+        if (empty($items)) {
+            echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Giỏ hàng trống'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $rentalService = new \App\Services\RentalService();
+        $conflict = $rentalService->checkCartConflict($items);
+        if (!$conflict['success']) {
+            echo json_encode(['status' => 'error', 'success' => false, 'message' => $conflict['message']], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $totalRent = 0;
+        $totalDeposit = 0;
+        foreach ($items as &$item) {
+            $days = $rentalService->calculateRentalDays($item['rent_date'], $item['return_date']);
+            if ($days <= 0) {
+                echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Ngày thuê/trả không hợp lệ'], JSON_UNESCAPED_UNICODE);
+                return;
             }
+
+            $price = (float)$item['price'];
+            $depositPrice = (float)$item['deposit_price'];
+            $qty = (int)$item['quantity'];
+
+            $item['days'] = $days;
+            $item['subtotal'] = $price * $qty * $days;
+            $item['deposit'] = $depositPrice * $qty;
+
+            $totalRent += $item['subtotal'];
+            $totalDeposit += $item['deposit'];
         }
-    }
-    
-    if (empty($items)) {
-        echo json_encode(['success' => false, 'message' => 'Giỏ hàng trống']);
-        return;
-    }
-    
-    // Tính toán chi tiết từng item
-    $totalRent = 0;
-    $totalDeposit = 0;
-    foreach ($items as &$item) {
-        $rentDate = new \DateTime($item['rent_date']);
-        $returnDate = new \DateTime($item['return_date']);
-        $days = $rentDate->diff($returnDate)->days;
-        $days = max(1, $days);
-        $price = (float)$item['price'];
-        $depositPrice = (float)($item['deposit_price'] ?? $price * 0.3);
-        
-        $item['days'] = $days;
-        $item['subtotal'] = $price * $item['quantity'] * $days;
-        $item['deposit'] = $depositPrice * $item['quantity'];
-        
-        $totalRent += $item['subtotal'];
-        $totalDeposit += $item['deposit'];
-    }
-    $finalTotal = $totalRent + $totalDeposit - $discount;
-    if ($finalTotal < 0) $finalTotal = 0;
-    
-    // Xác thực discount (nếu có)
-    if ($discount > 0 && (!isset($_SESSION['voucher_discount']) || $_SESSION['voucher_discount'] != $discount)) {
-        echo json_encode(['success' => false, 'message' => 'Mã giảm giá không hợp lệ']);
-        return;
-    }
-    
-    // Tạo đơn hàng
-    $orderModel = new \App\Models\Order();
-    $orderId = $orderModel->create([
-        'user_id' => $userId,
-        'address_id' => $addressId,
-        'payment_method' => $paymentMethod,
-        'notes' => $notes,
-        'total_rent' => $totalRent,
-        'total_deposit' => $totalDeposit,
-        'discount' => $discount,
-        'final_total' => $finalTotal,
-        'status' => 'pending'
-    ]);
-    
-    if (!$orderId) {
-        echo json_encode(['success' => false, 'message' => 'Không thể tạo đơn hàng']);
-        return;
-    }
-    
-    // Lưu chi tiết và xóa item đã đặt
-    $orderItemModel = new \App\Models\OrderItem();
-    $success = true;
-    foreach ($items as $item) {
-        $result = $orderItemModel->create([
-            'order_id' => $orderId,
-            'product_id' => $item['product_id'],
-            'size' => $item['size'],
-            'color' => $item['color'],
-            'quantity' => $item['quantity'],
-            'rent_date' => $item['rent_date'],
-            'return_date' => $item['return_date'],
-            'price' => $item['price'],
-            'deposit' => $item['deposit'],
-            'subtotal' => $item['subtotal']
+        unset($item);
+
+        if ($discount > 0 && (!isset($_SESSION['voucher_discount']) || (float)$_SESSION['voucher_discount'] !== $discount)) {
+            echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Mã giảm giá không hợp lệ'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $finalTotal = max(0, $totalRent + $totalDeposit - $discount);
+        $firstItem = $items[0];
+        $lastItem = end($items);
+
+        $orderModel = new \App\Models\Order();
+        $orderId = $orderModel->create([
+            'user_id' => $userId,
+            'address_id' => $addressId,
+            'rent_date' => $firstItem['rent_date'],
+            'return_date' => $lastItem['return_date'],
+            'payment_method' => $paymentMethod,
+            'payment_status' => $paymentMethod === 'cash' ? 'unpaid' : 'pending',
+            'notes' => $notes,
+            'total_rent' => $totalRent,
+            'total_deposit' => $totalDeposit,
+            'discount' => $discount,
+            'final_total' => $finalTotal,
+            'total_price' => $finalTotal,
+            'deposit_amount' => $totalDeposit,
+            'status' => 'pending'
         ]);
-        if (!$result) {
-            $success = false;
-            break;
+
+        if (!$orderId) {
+            echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Không thể tạo đơn hàng'], JSON_UNESCAPED_UNICODE);
+            return;
         }
-        // Xóa item khỏi giỏ hàng
-        $cartModel->removeById($item['id'], $userId);
+
+        $orderItemModel = new \App\Models\OrderItem();
+        foreach ($items as $item) {
+            $ok = $orderItemModel->create([
+                'order_id' => $orderId,
+                'product_id' => $item['product_id'],
+                'size' => $item['size'] ?? null,
+                'color' => $item['color'] ?? null,
+                'quantity' => $item['quantity'],
+                'rent_date' => $item['rent_date'],
+                'return_date' => $item['return_date'],
+                'days' => $item['days'],
+                'price' => $item['price'],
+                'deposit' => $item['deposit'],
+                'subtotal' => $item['subtotal']
+            ]);
+
+            if (!$ok) {
+                $orderModel->delete($orderId);
+                echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Lỗi khi lưu chi tiết đơn hàng'], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+
+            $cartModel->removeById($item['id'], $userId);
+        }
+
+        $paymentModel = new \App\Models\Payment();
+        $paymentModel->create([
+            'order_id' => $orderId,
+            'amount' => $finalTotal,
+            'method' => $paymentMethod,
+            'status' => $paymentMethod === 'cash' ? 'unpaid' : 'pending'
+        ]);
+
+        unset($_SESSION['voucher_discount'], $_SESSION['voucher_code']);
+
+        if ($paymentMethod === 'cash') {
+            echo json_encode([
+                'status' => 'success',
+                'method' => 'cash',
+                'redirect' => '/order/success'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'method' => 'transfer',
+            'order_id' => $orderId,
+            'amount' => $finalTotal,
+            'redirect' => '/payment/qr?order_id=' . $orderId
+        ], JSON_UNESCAPED_UNICODE);
     }
-    
-    if (!$success) {
-        // Rollback: xóa đơn hàng
-        $orderModel->delete($orderId);
-        echo json_encode(['success' => false, 'message' => 'Lỗi khi lưu chi tiết đơn hàng']);
-        return;
+
+    private function normalizePaymentMethod(string $method): string
+    {
+        $method = strtolower(trim($method));
+        if (in_array($method, ['transfer', 'bank_transfer', 'chuyen_khoan', 'bank'], true)) {
+            return 'transfer';
+        }
+        return 'cash';
     }
-    
-    // Xóa session voucher
-    unset($_SESSION['voucher_discount']);
-    unset($_SESSION['voucher_code']);
-    
-    echo json_encode(['success' => true, 'order_id' => $orderId]);
-}
 }

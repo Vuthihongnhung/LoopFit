@@ -43,11 +43,15 @@ class Router {
             $controllerPath = $parts[0];
             $methodName = $parts[1];
 
-            $controllerName = "App\\Controllers\\User\\$controllerPath";
+            if (strpos($controllerPath, '\\') !== false) {
+                $controllerName = $controllerPath;
+            } else {
+                $controllerName = "App\\Controllers\\User\\$controllerPath";
 
-            if (strpos($controllerPath, 'admin/') === 0) {
-                $controllerPath = str_replace('admin/', '', $controllerPath);
-                $controllerName = "App\\Controllers\\Admin\\$controllerPath";
+                if (strpos($controllerPath, 'admin/') === 0) {
+                    $controllerPath = str_replace('admin/', '', $controllerPath);
+                    $controllerName = "App\\Controllers\\Admin\\$controllerPath";
+                }
             }
 
             if (class_exists($controllerName)) {

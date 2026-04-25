@@ -13,56 +13,77 @@ class RentalService
         $this->conn = $db->getConnection();
     }
 
-    public function isDateValid($rentDate, $returnDate)
+    public function isDateValid($rentDate, $returnDate): bool
     {
-        return strtotime($rentDate) <= strtotime($returnDate);
+        return strtotime($rentDate) !== false
+            && strtotime($returnDate) !== false
+            && strtotime($rentDate) <= strtotime($returnDate);
     }
 
-    /**
-     * Kiểm tra xem sản phẩm có đủ số lượng trong kho cho khoảng thời gian này không
-     */
-    public function hasConflict($productId, $rentDate, $returnDate, $requestedQty = 1)
+    public function calculateRentalDays($rentDate, $returnDate): int
     {
-        // 1. Lấy tổng số lượng sản phẩm đang có trong kho (Total Stock)
+        if (!$this->isDateValid($rentDate, $returnDate)) {
+            return 0;
+        }
+        return (new \DateTime($rentDate))->diff(new \DateTime($returnDate))->days + 1;
+    }
+
+    public function calculateLateFee($expectedReturnDate, $actualReturnDate, float $dailyLateFee = 50000): float
+    {
+        if (empty($expectedReturnDate) || empty($actualReturnDate)) {
+            return 0;
+        }
+
+        $expected = new \DateTime($expectedReturnDate);
+        $actual = new \DateTime($actualReturnDate);
+
+        if ($actual <= $expected) {
+            return 0;
+        }
+
+        return $expected->diff($actual)->days * $dailyLateFee;
+    }
+
+    public function hasConflict($productId, $rentDate, $returnDate, $requestedQty = 1): bool
+    {
+        if (!$this->isDateValid($rentDate, $returnDate)) {
+            return true;
+        }
+
         $sqlStock = "SELECT stock FROM products WHERE id = ?";
         $stmtStock = $this->conn->prepare($sqlStock);
         $stmtStock->bind_param("i", $productId);
         $stmtStock->execute();
         $product = $stmtStock->get_result()->fetch_assoc();
-        $totalStock = $product['stock'] ?? 0;
+        $totalStock = (int)($product['stock'] ?? 0);
 
-        // 2. Tính tổng số lượng đã được thuê (Status: pending, confirmed, renting) trong khoảng thời gian này
-        // Công thức Overlap: (Ngày thuê cũ <= Ngày trả mới) AND (Ngày trả cũ >= Ngày thuê mới)
-        $sqlRented = "SELECT SUM(od.quantity) as rented_total
+        $sqlRented = "SELECT COALESCE(SUM(od.quantity), 0) AS rented_total
                       FROM order_details od
                       JOIN orders o ON od.order_id = o.id
                       WHERE od.product_id = ?
                         AND o.status IN ('pending', 'confirmed', 'renting')
-                        AND o.rent_date <= ? 
-                        AND o.return_date >= ?";
-        
+                        AND COALESCE(od.rent_date, o.rent_date) <= ?
+                        AND COALESCE(od.return_date, o.return_date) >= ?";
+
         $stmtRented = $this->conn->prepare($sqlRented);
         $stmtRented->bind_param("iss", $productId, $returnDate, $rentDate);
         $stmtRented->execute();
-        $rentedTotal = $stmtRented->get_result()->fetch_assoc()['rented_total'] ?? 0;
+        $rentedTotal = (int)($stmtRented->get_result()->fetch_assoc()['rented_total'] ?? 0);
 
-        // 3. Kiểm tra: Nếu (Đã thuê + Số lượng muốn thuê mới) > Tổng kho => Xung đột (Hết đồ)
-        return ($rentedTotal + $requestedQty) > $totalStock;
+        return ($rentedTotal + (int)$requestedQty) > $totalStock;
     }
 
-    /**
-     * Duyệt qua danh sách giỏ hàng để kiểm tra từng món
-     */
-    public function checkCartConflict($cartItems, $rentDate, $returnDate)
+    public function checkCartConflict($cartItems, $rentDate = null, $returnDate = null): array
     {
         foreach ($cartItems as $item) {
-            // Lấy quantity từ giỏ hàng truyền vào
-            $qty = isset($item['quantity']) ? (int)$item['quantity'] : 1;
-            
-            if ($this->hasConflict($item['product_id'], $rentDate, $returnDate, $qty)) {
+            $qty = (int)($item['quantity'] ?? 1);
+            $itemRentDate = $rentDate ?: ($item['rent_date'] ?? null);
+            $itemReturnDate = $returnDate ?: ($item['return_date'] ?? null);
+
+            if ($this->hasConflict($item['product_id'], $itemRentDate, $itemReturnDate, $qty)) {
                 return [
                     'success' => false,
-                    'message' => 'Sản phẩm "' . $item['name'] . '" không đủ số lượng trong khoảng thời gian từ ' . $rentDate . ' đến ' . $returnDate . '.'
+                    'message' => 'Sản phẩm "' . ($item['name'] ?? ('#' . $item['product_id'])) . '" không đủ số lượng trong khoảng thời gian đã chọn.'
                 ];
             }
         }

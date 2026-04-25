@@ -67,6 +67,13 @@ $method = $_SERVER['REQUEST_METHOD'];
         exit;
     }
 
+// ===== PAYMENT QR DYNAMIC =====
+if (preg_match('#^payment/qr/?$#', $url)) {
+    $ctrl = new App\Controllers\User\PaymentController();
+    $ctrl->showQr($_GET['order_id'] ?? null);
+    exit;
+}
+
 // ===== ROUTING =====
 switch ($url) {
 
@@ -178,6 +185,36 @@ switch ($url) {
         $ctrl->filterApi();
         break;
 
+    case 'search':
+        $ctrl = new App\Controllers\User\SearchController();
+        $ctrl->index();
+        break;
+
+    case 'api/search':
+        $ctrl = new App\Controllers\User\SearchController();
+        $ctrl->api();
+        break;
+
+    case 'api/vouchers':
+        $ctrl = new App\Controllers\User\ApiController();
+        $ctrl->vouchers();
+        break;
+
+    case 'api/chart-data':
+        $ctrl = new App\Controllers\User\ApiController();
+        $ctrl->chartData();
+        break;
+
+    case 'api/payment/confirm':
+        $ctrl = new App\Controllers\User\PaymentController();
+        $ctrl->confirmPayment();
+        break;
+
+    case 'api/checkout/process':
+        $ctrl = new App\Controllers\User\CheckoutController();
+        $ctrl->processCheckout();
+        break;
+
     // ===== CHECKOUT =====
     case 'checkout':
         $ctrl = new App\Controllers\User\CheckoutController();
@@ -192,6 +229,10 @@ switch ($url) {
     case 'checkout/apply-voucher':
         $ctrl = new App\Controllers\User\CheckoutController();
         $ctrl->applyVoucher();
+        break;
+
+    case 'order/success':
+        echo '<h2>Đặt hàng thành công</h2><p>Cảm ơn bạn đã đặt hàng tại LoopFit.</p>';
         break;
 
     // ===== USER ORDERS =====

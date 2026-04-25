@@ -143,6 +143,21 @@ class Product extends Model
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 
+
+    public function search($keyword, $limit = 30)
+    {
+        $keyword = trim($keyword);
+        if ($keyword === '') return [];
+        $like = '%' . $keyword . '%';
+        $limit = max(1, min((int)$limit, 100));
+        $sql = "SELECT * FROM products WHERE name LIKE ? OR description LIKE ? ORDER BY id DESC LIMIT ?";
+        $stmt = $this->conn->prepare($sql);
+        if (!$stmt) return [];
+        $stmt->bind_param("ssi", $like, $like, $limit);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
     // ===== THÊM METHOD CREATE (quan trọng) =====
   // ===== METHOD CREATE (đã sửa - thêm deposit_price, sizes, colors, gender) =====
     public function create($name, $price, $deposit_price, $description, $image, $stock, $category_id, $sizes = null, $colors = null, $gender = 'unisex', $rented_count = 0)
