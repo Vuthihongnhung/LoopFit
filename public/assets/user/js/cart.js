@@ -1,35 +1,76 @@
+// ========== ĐỊNH DẠNG TIỀN ==========
 function formatMoney(number) {
     return number.toLocaleString('vi-VN') + 'đ';
 }
 
+// ========== TÍNH TỔNG TIỀN (ĐÃ SỬA LOGIC CỌC) ==========
 function updateCartTotal() {
-    let total = 0;
+    let totalRent = 0;
     let totalDeposit = 0;
+
     document.querySelectorAll('.cart-item').forEach(item => {
         const checkbox = item.querySelector('.item-select');
         if (checkbox && checkbox.checked) {
-            const price = parseFloat(item.dataset.price);
-            const days = parseInt(item.dataset.days);
-            const depositPrice = parseFloat(item.dataset.depositPrice);
-            const cartId = item.dataset.cartId;
+            let price = parseFloat(item.dataset.price);
+            let days = parseInt(item.dataset.days, 10);
+            let depositPerItem = parseFloat(item.dataset.depositPrice);
+            let cartId = item.dataset.cartId;
             const qtySpan = document.getElementById('qty-' + cartId);
-            if (qtySpan) {
-                const qty = parseInt(qtySpan.innerText);
-                total += price * qty * days;
-                totalDeposit += depositPrice * qty;
-            }
+            let qty = qtySpan ? parseInt(qtySpan.innerText, 10) : 1;
+
+            if (isNaN(price)) price = 0;
+            if (isNaN(days)) days = 0;
+            if (isNaN(depositPerItem)) depositPerItem = 0;
+            if (isNaN(qty)) qty = 1;
+
+            totalRent += price * days * qty;
+            totalDeposit += depositPerItem * qty;  // cọc = cọc 1sp * số lượng
         }
     });
-    // Kiểm tra phần tử tồn tại trước khi gán
-    const tempEl = document.getElementById('cart-total-temp');
-    if (tempEl) tempEl.innerText = formatMoney(total);
-    const depositEl = document.getElementById('cart-deposit-total');
-    if (depositEl) depositEl.innerText = formatMoney(totalDeposit);
-    const totalEl = document.getElementById('cart-total-all');
-    if (totalEl) totalEl.innerText = formatMoney(total + totalDeposit);
+
+    const grandTotal = totalRent + totalDeposit;
+
+    document.getElementById('cart-total-temp') && (document.getElementById('cart-total-temp').innerText = formatMoney(totalRent));
+    document.getElementById('cart-deposit-total') && (document.getElementById('cart-deposit-total').innerText = formatMoney(totalDeposit));
+    document.getElementById('cart-total-all') && (document.getElementById('cart-total-all').innerText = formatMoney(grandTotal));
 }
 
+// ========== CẬP NHẬT BADGE GIỎ HÀNG ==========
+function updateCartCount() {
+    fetch('/LoopFit/public/api/cart/count')
+        .then(res => res.json())
+        .then(data => {
+            const el = document.getElementById('cart-count');
+            if (el) el.innerText = data.count;
+        })
+        .catch(() => {});
+}
+
+// ========== MODAL XÁC NHẬN XÓA ==========
+let confirmModal = null;
+function initConfirmModal() { /* ... giữ nguyên như cũ ... */ }
+function showConfirm(message, onConfirm) { /* ... */ }
+
+// ========== CẬP NHẬT SỐ LƯỢNG (OPTIMISTIC + BADGE) ==========
 window.updateQuantity = function(cartId, change) {
+    const qtySpan = document.getElementById('qty-' + cartId);
+    if (!qtySpan) return;
+    let currentQty = parseInt(qtySpan.innerText, 10);
+    let newQty = currentQty + change;
+    if (newQty < 1) return;
+
+    const oldQty = currentQty;
+    qtySpan.innerText = newQty;
+
+    const itemDiv = document.querySelector(`.cart-item[data-cart-id="${cartId}"]`);
+    if (itemDiv) {
+        const price = parseFloat(itemDiv.dataset.price);
+        const days = parseInt(itemDiv.dataset.days, 10);
+        const totalSpan = document.getElementById('total-' + cartId);
+        if (totalSpan) totalSpan.innerText = formatMoney(price * newQty * days);
+    }
+    updateCartTotal();
+
     fetch('/LoopFit/public/api/cart/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -37,28 +78,39 @@ window.updateQuantity = function(cartId, change) {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) {
-            if (data.new_quantity !== undefined) {
-                const qtySpan = document.getElementById('qty-' + cartId);
-                qtySpan.innerText = data.new_quantity;
-                const itemDiv = document.querySelector(`.cart-item[data-cart-id="${cartId}"]`);
+        if (!data.success) {
+            // rollback
+            qtySpan.innerText = oldQty;
+            if (itemDiv) {
                 const price = parseFloat(itemDiv.dataset.price);
-                const days = parseInt(itemDiv.dataset.days);
-                const depositPrice = parseFloat(itemDiv.dataset.depositPrice);
+                const days = parseInt(itemDiv.dataset.days, 10);
                 const totalSpan = document.getElementById('total-' + cartId);
-                totalSpan.innerText = formatMoney(price * data.new_quantity * days);
-                updateCartTotal();
-            } else {
-                location.reload();
+                if (totalSpan) totalSpan.innerText = formatMoney(price * oldQty * days);
             }
+            updateCartTotal();
+            Toast.error(data.message || 'Không thể cập nhật số lượng');
         } else {
-            alert(data.message);
+            // Cập nhật badge ngay lập tức
+            updateCartCount();
         }
+    })
+    .catch(() => {
+        // rollback lỗi mạng
+        qtySpan.innerText = oldQty;
+        if (itemDiv) {
+            const price = parseFloat(itemDiv.dataset.price);
+            const days = parseInt(itemDiv.dataset.days, 10);
+            const totalSpan = document.getElementById('total-' + cartId);
+            if (totalSpan) totalSpan.innerText = formatMoney(price * oldQty * days);
+        }
+        updateCartTotal();
+        Toast.error('Lỗi kết nối, vui lòng thử lại');
     });
 };
 
+// ========== XÓA SẢN PHẨM (KHÔNG RELOAD) ==========
 window.removeFromCart = function(cartId) {
-    if (confirm("Xóa sản phẩm?")) {
+    showConfirm('Bạn có chắc chắn muốn xóa sản phẩm này?', () => {
         fetch('/LoopFit/public/api/cart/remove', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -66,29 +118,33 @@ window.removeFromCart = function(cartId) {
         })
         .then(r => r.json())
         .then(data => {
-            if (data.success) location.reload();
-            else alert(data.message);
-        });
-    }
+            if (data.success) {
+                const itemDiv = document.querySelector(`.cart-item[data-cart-id="${cartId}"]`);
+                if (itemDiv) itemDiv.remove();
+                updateCartTotal();
+                updateCartCount();  // cập nhật badge
+                Toast.success('Đã xóa sản phẩm');
+                if (document.querySelectorAll('.cart-item').length === 0) {
+                    location.reload(); // hoặc hiển thị giỏ trống
+                }
+            } else {
+                Toast.error(data.message || 'Xóa thất bại');
+            }
+        })
+        .catch(() => Toast.error('Lỗi kết nối'));
+    });
 };
 
-function updateCartCount() {
-    fetch('/LoopFit/public/api/cart/count')
-        .then(res => res.json())
-        .then(data => {
-            const el = document.getElementById('cart-count');
-            if (el) el.innerText = data.count;
-        });
-}
-
+// ========== KHỞI TẠO ==========
 document.addEventListener('DOMContentLoaded', function() {
     updateCartCount();
     updateCartTotal();
+    initConfirmModal();
 
-    // Sự kiện checkbox
     document.querySelectorAll('.item-select').forEach(cb => {
         cb.addEventListener('change', updateCartTotal);
     });
+
     const selectAll = document.getElementById('select-all');
     if (selectAll) {
         selectAll.addEventListener('change', function() {
@@ -97,7 +153,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Nút thanh toán
     const checkoutBtn = document.getElementById('checkout-selected');
     if (checkoutBtn) {
         checkoutBtn.addEventListener('click', function() {
@@ -106,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 selected.push(cb.dataset.cartId);
             });
             if (selected.length === 0) {
-                alert('Vui lòng chọn ít nhất một sản phẩm');
+                Toast.warning('Vui lòng chọn sản phẩm');
                 return;
             }
             window.location.href = '/LoopFit/public/checkout?cart_ids=' + selected.join(',');

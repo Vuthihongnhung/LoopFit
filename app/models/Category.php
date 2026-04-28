@@ -100,4 +100,21 @@ class Category extends Model
         }
         return $breadcrumb;
     }
+
+    public function getAllDescendants($parentId) {
+        $ids = [$parentId];
+        $this->getChildrenRecursive($parentId, $ids);
+        return $ids;
+    }
+
+    private function getChildrenRecursive($parentId, &$ids) {
+        $stmt = $this->conn->prepare("SELECT id FROM categories WHERE parent_id = ?");
+        $stmt->bind_param("i", $parentId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $ids[] = $row['id'];
+            $this->getChildrenRecursive($row['id'], $ids);
+        }
+    }
 }

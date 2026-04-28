@@ -21,24 +21,37 @@
                 foreach ($cart as $item):
                     $cartId = $item['cart_id'];
                     $name = $item['name'];
-                    $price = (float)$item['price'];
-                    $depositPrice = (float)($item['deposit_price'] ?? $price * 0.3);
+                    $price = (float)$item['price'];                           // giá thuê 1 ngày
+                    $depositPerItem = (float)($item['deposit_price'] ?? $price * 0.3); // tiền cọc cho 1 sản phẩm
                     $quantity = (int)$item['quantity'];
-                    $days = (int)($item['days'] ?? 1);
+                    $days = (int)($item['days'] ?? 1);                       // số ngày thuê
                     $size = $item['size'];
                     $color = $item['color'] ?? '';
                     $rentDate = $item['rent_date'];
                     $returnDate = $item['return_date'];
+                      // Xử lý ảnh - sửa đường dẫn đúng
                     $imageRaw = $item['image'];
                     $firstImage = trim(explode(',', $imageRaw)[0] ?? '');
-                    $imgUrl = '/LoopFit/public/assets/uploads/products/' . ($firstImage ?: 'no-image.png');
-                    $subtotal = $price * $quantity * $days;
-                    $depositTotal = $depositPrice * $quantity;
+                    if (empty($firstImage)) {
+                        $firstImage = 'default-product.png';
+                    }
+                    $imgUrl = BASE_URL . '/uploads/' . $firstImage;
+                    
+                    $subtotal = $price * $quantity * $days;                  // tổng tiền thuê dòng
+                    $depositTotal = $depositPerItem * $quantity;             // tổng tiền cọc dòng
                     $totalAll += $subtotal;
                     $totalDeposit += $depositTotal;
                 ?>
-                    <div class="cart-item" data-cart-id="<?= $cartId ?>" data-price="<?= $price ?>" data-days="<?= $days ?>" data-deposit-price="<?= $depositPrice ?>">
-                        <div class="col-checkbox"><input type="checkbox" class="item-select" data-cart-id="<?= $cartId ?>" checked></div>
+                    <div class="cart-item" 
+                         data-cart-id="<?= $cartId ?>" 
+                         data-price="<?= $price ?>" 
+                         data-days="<?= $days ?>" 
+                         data-deposit-price="<?= $depositPerItem ?>">
+                         
+                        <div class="col-checkbox">
+                            <input type="checkbox" class="item-select" data-cart-id="<?= $cartId ?>" checked>
+                        </div>
+                        
                         <div class="col-product">
                             <div class="cart-product">
                                 <img src="<?= $imgUrl ?>" alt="<?= htmlspecialchars($name) ?>">
@@ -48,11 +61,16 @@
                                     <div class="cart-attr">Ngày thuê: <?= htmlspecialchars($rentDate) ?></div>
                                     <div class="cart-attr">Ngày trả: <?= htmlspecialchars($returnDate) ?></div>
                                     <div class="cart-attr">Số ngày: <?= $days ?></div>
-                                    <div class="cart-deposit">Cọc: <?= number_format($depositTotal, 0, ',', '.') ?>đ</div>
+                                    <div class="cart-deposit">
+                                        Cọc: <?= number_format($depositTotal, 0, ',', '.') ?>đ 
+                                        <small>(<?= number_format($depositPerItem, 0, ',', '.') ?>đ / sp)</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        
                         <div class="col-price"><?= number_format($price, 0, ',', '.') ?>đ <small>/ngày</small></div>
+                        
                         <div class="col-qty">
                             <div class="cart-quantity">
                                 <button class="qty-btn" onclick="updateQuantity(<?= $cartId ?>, -1)">-</button>
@@ -60,13 +78,16 @@
                                 <button class="qty-btn" onclick="updateQuantity(<?= $cartId ?>, 1)">+</button>
                             </div>
                         </div>
+                        
                         <div class="col-total" id="total-<?= $cartId ?>"><?= number_format($subtotal, 0, ',', '.') ?>đ</div>
+                        
                         <div class="col-action">
                             <button class="cart-remove" onclick="removeFromCart(<?= $cartId ?>)" title="Xóa">✕</button>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
+            
             <div class="cart-summary">
                 <div class="summary-title">Thông tin đơn hàng</div>
                 <div class="summary-row">

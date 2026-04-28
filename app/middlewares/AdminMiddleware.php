@@ -7,5 +7,6 @@ class AdminMiddleware {
         header('Location: /LoopFit/public/admin/login');
         exit(); // BẮT BUỘC phải có để ngăn Dashboard Controller chạy tiếp
     }
+    
 }
 }

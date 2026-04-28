@@ -1,21 +1,35 @@
+// assets/user/js/checkout.js
 $(document).ready(function() {
     // ========== BIẾN TOÀN CỤC ==========
     let totalRent = parseFloat($('#total_rent_value').val()) || 0;
     let totalDeposit = parseFloat($('#total_deposit_value').val()) || 0;
-    let originalTotal = totalRent + totalDeposit;
+    let baseTotal = totalRent + totalDeposit; // tiền thuê + cọc (chưa giảm giá, chưa ship)
     let currentDiscount = 0;
-    let addresses = []; // lưu danh sách địa chỉ để dùng cho modal sửa
+    let shippingFee = 0;
+    let addresses = [];
 
     // Helper format tiền
     function formatMoney(amount) {
         return amount.toLocaleString('vi-VN') + 'đ';
     }
 
-    // Cập nhật tổng tiền sau discount
+    // Tính phí vận chuyển dựa trên total_rent (tiền thuê, không bao gồm cọc)
+    function calculateShippingFee(rentAmount) {
+        if (rentAmount < 400000) {
+            return 30000;
+        }
+        return 0;
+    }
+
+    // Khởi tạo phí ship ban đầu
+    shippingFee = calculateShippingFee(totalRent);
+
+    // Cập nhật tổng tiền sau discount và shipping
     function updateTotalDisplay() {
-        let finalTotal = originalTotal - currentDiscount;
+        let finalTotal = baseTotal - currentDiscount + shippingFee;
         $('#final-total').text(formatMoney(finalTotal));
         $('#discount-amount').text(formatMoney(currentDiscount));
+        $('#shipping-fee').text(formatMoney(shippingFee));
         if (currentDiscount > 0) {
             $('.discount-row').show();
         } else {
@@ -34,29 +48,47 @@ $(document).ready(function() {
         });
     }
 
+    // Xác định BASE_URL
+    let BASE_URL = '';
+    var baseMeta = $('meta[name="base-url"]').attr('content');
+    if (baseMeta) {
+        BASE_URL = baseMeta;
+    } else {
+        let path = window.location.pathname;
+        if (path.startsWith('/LoopFit/public')) {
+            BASE_URL = '/LoopFit/public';
+        } else {
+            BASE_URL = '';
+        }
+    }
+
     // ========== QUẢN LÝ ĐỊA CHỈ ==========
-    // Load danh sách địa chỉ từ API
     function loadAddresses() {
+        if (!window.isLoggedIn) {
+            $('#checkout-address-list').html('<p class="error">Vui lòng <a href="' + BASE_URL + '/login">đăng nhập</a> để chọn địa chỉ.</p>');
+            return;
+        }
         $('#checkout-address-list').html('<div class="loading">Đang tải...</div>');
         $.ajax({
-            url: '/LoopFit/public/api/addresses',
+            url: BASE_URL + '/api/addresses',
             type: 'GET',
             dataType: 'json',
             success: function(res) {
                 if (res.success) {
-                    addresses = res.addresses;
+                    addresses = res.data;
                     renderAddressList(addresses);
                 } else {
-                    $('#checkout-address-list').html('<p class="error">Lỗi tải địa chỉ</p>');
+                    $('#checkout-address-list').html('<p class="error">' + (res.message || 'Lỗi tải địa chỉ') + '</p>');
+                    if (window.Toast) Toast.error('Lỗi tải địa chỉ');
                 }
             },
             error: function() {
                 $('#checkout-address-list').html('<p class="error">Lỗi kết nối</p>');
+                if (window.Toast) Toast.error('Lỗi kết nối server');
             }
         });
     }
 
-    // Render danh sách địa chỉ dạng radio
     function renderAddressList(addresses) {
         if (!addresses.length) {
             $('#checkout-address-list').html(`
@@ -69,7 +101,7 @@ $(document).ready(function() {
         let html = '';
         $.each(addresses, function(index, addr) {
             let isDefault = (addr.is_default == 1);
-            let checkedAttr = (index === 0 || isDefault) ? 'checked' : ''; // ưu tiên mặc định hoặc đầu tiên
+            let checkedAttr = (index === 0 || isDefault) ? 'checked' : '';
             html += `
                 <label class="address-item ${isDefault ? 'default' : ''}" data-id="${addr.id}">
                     <input type="radio" name="address_id" value="${addr.id}" ${checkedAttr} required>
@@ -87,34 +119,28 @@ $(document).ready(function() {
             `;
         });
         $('#checkout-address-list').html(html);
-        // Gán lại sự kiện click cho các nút (do render lại)
         bindAddressEvents();
-        // Highlight selected (nếu có radio checked)
         $('.address-item input:checked').closest('.address-item').addClass('selected');
     }
 
-    // Sự kiện cho các nút trong danh sách địa chỉ
     function bindAddressEvents() {
-        // Khi click vào item (trừ nút) thì chọn radio
         $('.address-item').off('click').on('click', function(e) {
-            if ($(e.target).is('button')) return; // không can thiệp khi click vào nút
+            if ($(e.target).is('button')) return;
             $(this).find('input[type="radio"]').prop('checked', true);
             $('.address-item').removeClass('selected');
             $(this).addClass('selected');
         });
-        // Nút sửa
         $('.edit-address-btn').off('click').on('click', function(e) {
             e.stopPropagation();
             let id = $(this).data('id');
             openAddressModal(id);
         });
-        // Nút xóa
         $('.delete-address-btn').off('click').on('click', function(e) {
             e.stopPropagation();
             let id = $(this).data('id');
             if (confirm('Bạn có chắc muốn xóa địa chỉ này?')) {
                 $.ajax({
-                    url: '/LoopFit/public/api/address/delete',
+                    url: BASE_URL + '/api/address/delete',
                     type: 'POST',
                     data: JSON.stringify({ id: id }),
                     contentType: 'application/json',
@@ -122,20 +148,20 @@ $(document).ready(function() {
                     success: function(res) {
                         if (res.success) {
                             loadAddresses();
+                            if (window.Toast) Toast.success('Xóa địa chỉ thành công');
                         } else {
-                            alert(res.message);
+                            if (window.Toast) Toast.error(res.message || 'Xóa thất bại');
                         }
                     },
-                    error: function() { alert('Lỗi xóa địa chỉ'); }
+                    error: function() { if (window.Toast) Toast.error('Lỗi xóa địa chỉ'); }
                 });
             }
         });
-        // Nút đặt mặc định
         $('.set-default-btn').off('click').on('click', function(e) {
             e.stopPropagation();
             let id = $(this).data('id');
             $.ajax({
-                url: '/LoopFit/public/api/address/set-default',
+                url: BASE_URL + '/api/address/set-default',
                 type: 'POST',
                 data: JSON.stringify({ id: id }),
                 contentType: 'application/json',
@@ -143,16 +169,17 @@ $(document).ready(function() {
                 success: function(res) {
                     if (res.success) {
                         loadAddresses();
+                        if (window.Toast) Toast.success('Đặt địa chỉ mặc định thành công');
                     } else {
-                        alert(res.message);
+                        if (window.Toast) Toast.error(res.message || 'Thất bại');
                     }
                 },
-                error: function() { alert('Lỗi đặt mặc định'); }
+                error: function() { if (window.Toast) Toast.error('Lỗi đặt mặc định'); }
             });
         });
     }
 
-    // ========== MODAL THÊM/SỬA ĐỊA CHỈ ==========
+    // ========== MODAL ĐỊA CHỈ ==========
     const $modal = $('#address-modal');
     const $modalTitle = $('#modal-title');
     const $editId = $('#edit-address-id');
@@ -165,7 +192,6 @@ $(document).ready(function() {
         $modalTitle.text(addressId ? 'Sửa địa chỉ' : 'Thêm địa chỉ mới');
         $editId.val(addressId || '');
         if (addressId) {
-            // Lấy thông tin từ mảng addresses đã có
             let addr = addresses.find(a => a.id == addressId);
             if (addr) {
                 $addrFullname.val(addr.full_name);
@@ -173,7 +199,7 @@ $(document).ready(function() {
                 $addrLine.val(addr.address_line);
                 $addrDefault.prop('checked', addr.is_default == 1);
             } else {
-                alert('Không tìm thấy địa chỉ');
+                if (window.Toast) Toast.error('Không tìm thấy địa chỉ');
                 return;
             }
         } else {
@@ -193,7 +219,6 @@ $(document).ready(function() {
     $('.modal-close, #modal-close-btn').on('click', closeModal);
     $(window).on('click', function(e) { if ($(e.target).is($modal)) closeModal(); });
 
-    // Lưu địa chỉ (thêm hoặc sửa)
     $('#modal-save').on('click', function() {
         let id = $editId.val();
         let data = {
@@ -203,10 +228,10 @@ $(document).ready(function() {
             is_default: $addrDefault.is(':checked') ? 1 : 0
         };
         if (!data.full_name || !data.phone || !data.address_line) {
-            alert('Vui lòng nhập đầy đủ thông tin');
+            if (window.Toast) Toast.warning('Vui lòng nhập đầy đủ thông tin');
             return;
         }
-        let url = id ? '/LoopFit/public/api/address/update' : '/LoopFit/public/api/address/add';
+        let url = id ? BASE_URL + '/api/address/update' : BASE_URL + '/api/address/add';
         if (id) data.id = id;
         $.ajax({
             url: url,
@@ -217,76 +242,91 @@ $(document).ready(function() {
             success: function(res) {
                 if (res.success) {
                     closeModal();
-                    loadAddresses(); // reload danh sách
+                    loadAddresses();
+                    if (window.Toast) Toast.success(id ? 'Cập nhật địa chỉ thành công' : 'Thêm địa chỉ thành công');
                 } else {
-                    alert(res.message);
+                    if (window.Toast) Toast.error(res.message || 'Lưu thất bại');
                 }
             },
-            error: function() { alert('Lỗi lưu địa chỉ'); }
+            error: function() { if (window.Toast) Toast.error('Lỗi lưu địa chỉ'); }
         });
     });
 
-    // ========== XỬ LÝ VOUCHER ==========
+    // ========== VOUCHER (người dùng nhập mã) ==========
     $('#apply-voucher').click(function() {
-        let code = $('#voucher-select').val();
+        let code = $('#voucher-code').val();  // lấy từ input thay vì select
         if (!code) {
-            $('#voucher-message').text('Vui lòng chọn mã giảm giá').css('color', 'red');
+            $('#voucher-message').text('Vui lòng nhập mã giảm giá').css('color', 'red');
+            if (window.Toast) Toast.warning('Vui lòng nhập mã giảm giá');
             return;
         }
         $.ajax({
-            url: '/LoopFit/public/checkout/apply-voucher',
+            url: BASE_URL + '/checkout/apply-voucher',
             type: 'POST',
-            data: { code: code, total_amount: originalTotal },
+            data: { code: code, total_amount: baseTotal },
             dataType: 'json',
             success: function(res) {
                 if (res.success) {
                     currentDiscount = parseFloat(res.discount);
                     updateTotalDisplay();
                     $('#voucher-message').text('Áp dụng thành công! Đã giảm ' + formatMoney(currentDiscount)).css('color', 'green');
+                    if (window.Toast) Toast.success('Áp dụng mã giảm giá thành công');
                 } else {
                     $('#voucher-message').text(res.message).css('color', 'red');
                     currentDiscount = 0;
                     updateTotalDisplay();
+                    if (window.Toast) Toast.error(res.message);
                 }
             },
             error: function() {
                 $('#voucher-message').text('Lỗi kết nối, vui lòng thử lại').css('color', 'red');
+                if (window.Toast) Toast.error('Lỗi kết nối server');
             }
         });
     });
 
-    $('#voucher-select').change(function() {
-        $('#apply-voucher').click();
-    });
+    // Không còn sự kiện change cho voucher-select nữa
 
     // ========== ĐẶT HÀNG ==========
     $('#checkout-form').submit(function(e) {
         e.preventDefault();
         if ($('input[name="address_id"]:checked').length === 0) {
-            alert('Vui lòng chọn địa chỉ nhận hàng');
+            if (window.Toast) Toast.warning('Vui lòng chọn địa chỉ nhận hàng');
             return;
         }
+        let paymentMethod = $('input[name="payment_method"]:checked').val();
         let formData = $(this).serialize();
         formData += '&discount=' + currentDiscount;
+        formData += '&payment_method=' + paymentMethod;
+        formData += '&shipping_fee=' + shippingFee;
+
         $.ajax({
-            url: '/LoopFit/public/checkout/process',
+            url: BASE_URL + '/checkout/process',
             type: 'POST',
             data: formData,
             dataType: 'json',
             success: function(res) {
                 if (res.success) {
-                    alert('Đặt hàng thành công! Mã đơn: ' + res.order_id);
-                    window.location.href = '/LoopFit/public/orders';
+                    if (paymentMethod === 'cash') {
+                        // Thanh toán khi nhận hàng (COD)
+                        if (window.Toast) Toast.success('Đặt hàng thành công! Mã đơn: ' + res.order_id);
+                        window.location.href = BASE_URL + '/order/success?order_id=' + res.order_id;
+                    } else {
+                        // Chuyển khoản -> chuyển sang trang QR code
+                        window.location.href = BASE_URL + '/user/payment/qr?order_id=' + res.order_id;
+                    }
                 } else {
-                    alert(res.message);
+                    if (window.Toast) Toast.error(res.message || 'Đặt hàng thất bại');
                 }
             },
-            error: function() {
-                alert('Có lỗi xảy ra, vui lòng thử lại sau');
+            error: function(xhr) {
+                let msg = xhr.responseJSON?.message || 'Có lỗi xảy ra, vui lòng thử lại';
+                if (window.Toast) Toast.error(msg);
             }
         });
     });
 
-    // Khởi tạo: load địa chỉ
+    // Khởi tạo: load địa chỉ, hiển thị tổng tiền với phí ship
     loadAddresses();
+    updateTotalDisplay();
 });
