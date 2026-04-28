@@ -23,37 +23,40 @@ class PromotionController extends Controller
 }
     
     public function apiGetList()
-    {
-        $promotionModel = new Promotion();
-        $promotions = $promotionModel->getAll();
+{
+    $promotionModel = new Promotion();
+    $promotions = $promotionModel->getAll();
+    
+    $formattedPromotions = [];
+    foreach ($promotions as $row) {
+        $now = date("Y-m-d H:i:s");
         
-        $formattedPromotions = [];
-        foreach ($promotions as $row) {
-            $now = date("Y-m-d H:i:s");
-            
-            if ($now < $row['start_date']) {
-                $status = "upcoming";
-            } elseif ($now > $row['end_date']) {
-                $status = "expired";
-            } else {
-                $status = "active";
-            }
-            
-            $formattedPromotions[] = [
-                "id" => (int)$row["id"],
-                "code" => $row["code"],
-                "discount_percent" => (int)$row["discount_percent"],
-                "start_date" => $row["start_date"],
-                "end_date" => $row["end_date"],
-                "status" => $status
-            ];
+        if ($now < $row['start_date']) {
+            $status = "upcoming";
+        } elseif ($now > $row['end_date']) {
+            $status = "expired";
+        } else {
+            $status = "active";
         }
         
-        return $this->json([
-            "success" => true,
-            "data" => $formattedPromotions
-        ]);
+        $formattedPromotions[] = [
+            "id" => (int)$row["id"],
+            "code" => $row["code"],
+            "discount_percent" => (int)$row["discount_percent"],
+            "min_order_value" => (float)($row["min_order_value"] ?? 0),
+            "usage_limit" => (int)($row["usage_limit"] ?? 0),
+            "used_count" => (int)($row["used_count"] ?? 0),
+            "start_date" => $row["start_date"],
+            "end_date" => $row["end_date"],
+            "status" => $status
+        ];
     }
+    
+    return $this->json([
+        "success" => true,
+        "data" => $formattedPromotions
+    ]);
+}
     
     public function store()
     {
@@ -66,6 +69,8 @@ class PromotionController extends Controller
         
         $code = strtoupper(trim($_POST['code'] ?? ''));
         $discount = $_POST['discount_percent'] ?? 0;
+        $min_order_value = (float)($_POST['min_order_value'] ?? 0);
+$usage_limit = (int)($_POST['usage_limit'] ?? 0);
         $start = $_POST['start_date'] ?? null;
         $end = $_POST['end_date'] ?? null;
         
@@ -85,7 +90,7 @@ class PromotionController extends Controller
             ]);
         }
         
-        $result = $promotionModel->create($code, $discount, $start, $end);
+        $result = $promotionModel->create($code, $discount, $min_order_value, $usage_limit, $start, $end);
         
         if ($result) {
             return $this->json([
@@ -100,6 +105,33 @@ class PromotionController extends Controller
             ]);
         }
     }
+    public function update()
+{
+    if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+        return $this->json(['success' => false, 'error' => 'Method không hợp lệ']);
+    }
+    
+    $id = (int)($_POST['id'] ?? 0);
+    $code = strtoupper(trim($_POST['code'] ?? ''));
+    $discount = (int)($_POST['discount_percent'] ?? 0);
+    $min_order_value = (float)($_POST['min_order_value'] ?? 0);
+    $usage_limit = (int)($_POST['usage_limit'] ?? 0);
+    $start = $_POST['start_date'] ?? null;
+    $end = $_POST['end_date'] ?? null;
+    
+    if ($id <= 0 || empty($code) || $discount <= 0) {
+        return $this->json(['success' => false, 'error' => 'Dữ liệu không hợp lệ']);
+    }
+    
+    $promotionModel = new \App\Models\Promotion();
+    $result = $promotionModel->update($id, $code, $discount, $min_order_value, $usage_limit, $start, $end);
+    
+    if ($result) {
+        return $this->json(['success' => true, 'message' => 'Cập nhật thành công']);
+    } else {
+        return $this->json(['success' => false, 'error' => 'Cập nhật thất bại']);
+    }
+}
         public function delete()
     {
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {

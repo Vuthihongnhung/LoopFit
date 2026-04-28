@@ -31,12 +31,12 @@ class Promotion extends Model
         return $stmt->num_rows > 0;
     }
     
-    public function create($code, $discount, $start, $end)
-    {
-        $stmt = $this->conn->prepare("INSERT INTO promotions (code, discount_percent, start_date, end_date) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("siss", $code, $discount, $start, $end);
-        return $stmt->execute();
-    }
+    public function create($code, $discount, $min_order_value, $usage_limit, $start, $end)
+{
+    $stmt = $this->conn->prepare("INSERT INTO promotions (code, discount_percent, min_order_value, usage_limit, used_count, start_date, end_date) VALUES (?, ?, ?, ?, 0, ?, ?)");
+    $stmt->bind_param("sddiss", $code, $discount, $min_order_value, $usage_limit, $start, $end);
+    return $stmt->execute();
+}
     
     public function getLastId()
     {
@@ -77,5 +77,32 @@ public function getVoucherByCode($code)
     if (!$result || $result->num_rows === 0) return null;
     return $result->fetch_assoc();
 }
+public function getAllWithUsage()
+{
+    $sql = "SELECT 
+                p.*,
+                COUNT(o.id) as used_count
+            FROM promotions p
+            LEFT JOIN orders o ON o.promotion_id = p.id
+            GROUP BY p.id
+            ORDER BY p.id DESC";
     
+    $result = $this->conn->query($sql);
+    if (!$result) {
+        return [];
+    }
+    
+    $promotions = [];
+    while ($row = $result->fetch_assoc()) {
+        $promotions[] = $row;
+    }
+    
+    return $promotions;
+}
+public function update($id, $code, $discount, $min_order_value, $usage_limit, $start, $end)
+{
+    $stmt = $this->conn->prepare("UPDATE promotions SET code=?, discount_percent=?, min_order_value=?, usage_limit=?, start_date=?, end_date=? WHERE id=?");
+    $stmt->bind_param("sddissi", $code, $discount, $min_order_value, $usage_limit, $start, $end, $id);
+    return $stmt->execute();
+}
 }

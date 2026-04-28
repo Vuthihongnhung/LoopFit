@@ -1,10 +1,13 @@
 <?php
-ini_set('display_errors', 1);
+// TẮT hiển thị lỗi ra browser - BẬT ghi log
+ini_set('display_errors', 0);  // ← SỬA thành 0
+ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
-    //$_SESSION['user_id'] = 1;
+    // KHÔNG tự động set user_id = 1
+    // $_SESSION['user_id'] = 1;  // ← COMMENT dòng này lại
 }
 
 // ===== CONFIG =====
@@ -83,67 +86,9 @@ switch ($url) {
         $ctrl->index();
         break;
 
-            // ===== USER AUTH =====
-    case 'login':
-        $ctrl = new App\Controllers\User\AuthController();
-        if ($method === 'POST') {
-            $ctrl->login();          // xử lý đăng nhập
-        } else {
-            $ctrl->loginForm();      // hiển thị form login
-        }
-        break;
-
-    case 'register':
-        $ctrl = new App\Controllers\User\AuthController();
-        if ($method === 'POST') {
-            $ctrl->register();       // xử lý đăng ký
-        } else {
-            $ctrl->registerForm();   // hiển thị form register
-        }
-        break;
-
-    case 'logout':
-        $ctrl = new App\Controllers\User\AuthController();
-        $ctrl->logout();
-        break;
-
-        // Profile
-    case 'profile':
-        $ctrl = new App\Controllers\User\UserController();
-        $ctrl->profile();
-        break;
-
-    // API update profile
-    case 'api/user/update-profile':
-        $ctrl = new App\Controllers\User\UserController();
-        $ctrl->updateProfile();
-        break;
-
-    // API change password
-    case 'api/user/change-password':
-        $ctrl = new App\Controllers\User\UserController();
-        $ctrl->changePassword();
-        break;
-
-    case 'api/addresses':
-        $ctrl = new App\Controllers\User\UserController();
-        $ctrl->getAddresses();
-        break;
-    case 'api/address/add':
-        $ctrl = new App\Controllers\User\UserController();
-        $ctrl->addAddress();
-        break;
-    case 'api/address/update':
-        $ctrl = new App\Controllers\User\UserController();
-        $ctrl->updateAddress();
-        break;
-    case 'api/address/delete':
-        $ctrl = new App\Controllers\User\UserController();
-        $ctrl->deleteAddress();
-        break;
-    case 'api/address/set-default':
-        $ctrl = new App\Controllers\User\UserController();
-        $ctrl->setDefaultAddress();
+    case (preg_match('#^product/([0-9]+)$#', $url, $matches) ? true : false):
+        $ctrl = new App\Controllers\User\ProductController();
+        $ctrl->show($matches[1]);
         break;
 
     // ===== CART PAGE =====
@@ -167,11 +112,6 @@ switch ($url) {
         $ctrl = new App\Controllers\User\CartController();
         $ctrl->remove();
         break;
-
-    case 'api/cart/count':
-        $ctrl = new App\Controllers\User\CartController();
-        $ctrl->count();
-        break;
     
     case 'api/products':
         $ctrl = new App\Controllers\User\ProductController();
@@ -187,11 +127,6 @@ switch ($url) {
     case 'checkout/process':
         $ctrl = new App\Controllers\User\CheckoutController();
         $ctrl->process();
-        break;
-
-    case 'checkout/apply-voucher':
-        $ctrl = new App\Controllers\User\CheckoutController();
-        $ctrl->applyVoucher();
         break;
 
     // ===== USER ORDERS =====
@@ -220,7 +155,20 @@ switch ($url) {
         $ctrl = new App\Controllers\Admin\DashboardController();
         $ctrl->index();
         break;
+   case 'admin/api/stats':   // ← THÊM DÒNG NÀY
+        $ctrl = new App\Controllers\Admin\DashboardController();
+        $ctrl->apiGetStats();
+        break;
+    case 'admin/api/monthly-revenue':
+    $ctrl = new App\Controllers\Admin\DashboardController();
+    $ctrl->apiMonthlyRevenue();
+    break;
 
+case 'admin/api/top-products':
+    $ctrl = new App\Controllers\Admin\DashboardController();
+    $ctrl->apiTopProducts();
+    break;
+    
     // ===== PRODUCTS =====
     case 'admin/products':
         $ctrl = new App\Controllers\Admin\ProductController();
@@ -282,7 +230,25 @@ switch ($url) {
         $ctrl = new App\Controllers\Admin\OrderController();
         $ctrl->updateStatus();
         break;
+     case 'admin/orders/updateStatus':   // ← THÊM DÒNG NÀY
+        $ctrl = new App\Controllers\Admin\OrderController();
+        $ctrl->updateStatus();
+        break;
 
+     case 'admin/orders/approvePayment':
+        $ctrl = new App\Controllers\Admin\OrderController();
+        $ctrl->approvePayment();
+        break;
+
+    case 'admin/orders/updateStatusAfterReturn':
+        $ctrl = new App\Controllers\Admin\OrderController();
+        $ctrl->updateStatusAfterReturn();
+        break;
+
+    case 'admin/orders/processDeposit':
+        $ctrl = new App\Controllers\Admin\OrderController();
+        $ctrl->processDeposit();
+        break;
     // ===== USERS =====
     case 'admin/users':
         $ctrl = new App\Controllers\Admin\UserController();
@@ -314,12 +280,15 @@ switch ($url) {
         $ctrl = new App\Controllers\Admin\PromotionController();
         $ctrl->store();
         break;
+    case 'admin/promotions/update':  
+        $ctrl = new App\Controllers\Admin\PromotionController();
+        $ctrl->update();
+        break;
     case 'admin/promotions/delete':
         $ctrl = new App\Controllers\Admin\PromotionController();
         $ctrl->delete();
         break;
-
-     // ===== CATEGORIES =====
+           // ===== CATEGORIES =====
     case 'admin/categories':
         $ctrl = new App\Controllers\Admin\CategoryController();
         $ctrl->index();
@@ -329,21 +298,96 @@ switch ($url) {
         $ctrl->apiGetList();
         break;
     case 'admin/categories/store':
-        $ctrl = new App\Controllers\Admin\CategoryController();
-        $ctrl->store();
+        if ($method === 'POST') {
+            $ctrl = new App\Controllers\Admin\CategoryController();
+            $ctrl->store();
+        } else {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+        }
         break;
     case 'admin/categories/update':
-        $ctrl = new App\Controllers\Admin\CategoryController();
-        $ctrl->update();
+        if ($method === 'POST') {
+            $ctrl = new App\Controllers\Admin\CategoryController();
+            $ctrl->update();
+        } else {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+        }
         break;
     case 'admin/categories/delete':
-        $ctrl = new App\Controllers\Admin\CategoryController();
+        if ($method === 'POST') {
+            $ctrl = new App\Controllers\Admin\CategoryController();
+            $ctrl->delete();
+        } else {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+        }
+        break;
+    // ===== REVIEWS =====
+case 'admin/reviews':
+    $ctrl = new App\Controllers\Admin\ReviewController();
+    $ctrl->index();
+    break;
+
+case 'admin/api/reviews':
+    $ctrl = new App\Controllers\Admin\ReviewController();
+    $ctrl->apiGetList();
+    break;
+
+case 'admin/reviews/delete':
+    if ($method === 'POST') {
+        $ctrl = new App\Controllers\Admin\ReviewController();
         $ctrl->delete();
+    } else {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+    break;
+
+case 'admin/reviews/toggle-status':
+    if ($method === 'POST') {
+        $ctrl = new App\Controllers\Admin\ReviewController();
+        $ctrl->toggleStatus();
+    } else {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+    break;
+    // ===== PAYMENTS =====
+    case 'admin/payments':
+        $ctrl = new App\Controllers\Admin\PaymentController();
+        $ctrl->index();
         break;
 
+    case 'admin/api/payments':
+        $ctrl = new App\Controllers\Admin\PaymentController();
+        $ctrl->apiGetList();
+        break;
+
+    case 'admin/payments/confirm':
+        if ($method === 'POST') {
+            $ctrl = new App\Controllers\Admin\PaymentController();
+            $ctrl->confirmPayment();
+        } else {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+        }
+        break;
+    case 'admin/api/pending-payments':
+    $ctrl = new App\Controllers\Admin\OrderController();
+    $ctrl->getPendingPayments();
+    break;
+
+case 'admin/api/pending-deposits':
+    $ctrl = new App\Controllers\Admin\OrderController();
+    $ctrl->getPendingDeposits();
+    break;
     // ===== 404 =====
     default:
         http_response_code(404);
         echo "404 Not Found - Route: '$url'";
         break;
-}
+} // <-- Đóng switch
+
+?> <!-- Đóng PHP -->

@@ -23,34 +23,43 @@ class Controller {
     }
 
     public function view($view, $data = []) {
-        if (!isset(self::$shared['cartCount'])) {
-            $this->share('cartCount', $this->getGlobalCartCount());
-        }
+    if (!isset(self::$shared['cartCount'])) {
+        $this->share('cartCount', $this->getGlobalCartCount());
+    }
 
-        $allData = array_merge(self::$shared, $data);
-        extract($allData);
+    $allData = array_merge(self::$shared, $data);
+    extract($allData);
 
-        $viewPath = __DIR__ . "/../views/" . str_replace('.', '/', $view) . ".php";
-        if (!file_exists($viewPath)) {
-            die("View not found: " . $viewPath);
-        }
+    $viewPath = __DIR__ . "/../views/" . str_replace('.', '/', $view) . ".php";
+    if (!file_exists($viewPath)) {
+        die("View not found: " . $viewPath);
+    }
 
-        ob_start();
-        require $viewPath;
-        $content = ob_get_clean();
+    ob_start();
+    require $viewPath;
+    $content = ob_get_clean();
 
-        if (strpos($view, 'admin') === 0 || strpos($view, '/admin') !== false) {
-            $layoutPath = __DIR__ . "/../views/layouts/admin.php";
-        } else {
-            $layoutPath = __DIR__ . "/../views/layouts/user.php";
-        }
-
+    if (strpos($view, 'admin') === 0 || strpos($view, '/admin') !== false) {
+        $layoutPath = __DIR__ . "/../views/layouts/admin.php";
         if (file_exists($layoutPath)) {
+            // Gộp biến để layout nhận được $activeMenu
+            $allData['content'] = $content;
+            extract($allData);
+            require $layoutPath;
+        } else {
+            echo $content;
+        }
+    } else {
+        $layoutPath = __DIR__ . "/../views/layouts/user.php";
+        if (file_exists($layoutPath)) {
+            $allData['content'] = $content;
+            extract($allData);
             require $layoutPath;
         } else {
             echo $content;
         }
     }
+}
 
     protected function json($data) {
         header('Content-Type: application/json');

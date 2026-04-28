@@ -155,7 +155,20 @@ switch ($url) {
         $ctrl->updateStatus();
         break;
 
+    case 'admin/orders/approvePayment':
+        $ctrl = new App\Controllers\Admin\OrderController();
+        $ctrl->approvePayment();
+        break;
 
+    case 'admin/orders/updateStatusAfterReturn':
+        $ctrl = new App\Controllers\Admin\OrderController();
+        $ctrl->updateStatusAfterReturn();
+        break;
+
+    case 'admin/orders/processDeposit':
+        $ctrl = new App\Controllers\Admin\OrderController();
+        $ctrl->processDeposit();
+        break;
     // ===== USERS =====
     case 'admin/users':
         $ctrl = new App\Controllers\Admin\UserController();
@@ -188,8 +201,41 @@ switch ($url) {
         $ctrl = new App\Controllers\Admin\PromotionController();
         $ctrl->store();
         break;
+        // ===== REVIEWS =====
+    case 'admin/reviews':
+        $ctrl = new App\Controllers\Admin\ReviewController();
+        $ctrl->index();
+        break;
 
+    case 'admin/api/reviews':
+        $ctrl = new App\Controllers\Admin\ReviewController();
+        $ctrl->apiGetList();
+        break;
 
+    case 'admin/reviews/delete':
+        $ctrl = new App\Controllers\Admin\ReviewController();
+        $ctrl->delete();
+        break;
+
+    case 'admin/reviews/toggle-status':
+        $ctrl = new App\Controllers\Admin\ReviewController();
+        $ctrl->toggleStatus();
+        break;
+        // ===== PAYMENTS =====
+    case 'admin/payments':
+        $ctrl = new App\Controllers\Admin\PaymentController();
+        $ctrl->index();
+        break;
+
+    case 'admin/api/payments':
+        $ctrl = new App\Controllers\Admin\PaymentController();
+        $ctrl->apiGetList();
+        break;
+
+    case 'admin/payments/confirm':
+        $ctrl = new App\Controllers\Admin\PaymentController();
+        $ctrl->confirmPayment();
+        break;
     // ===== DEFAULT =====
     default:
         http_response_code(404);

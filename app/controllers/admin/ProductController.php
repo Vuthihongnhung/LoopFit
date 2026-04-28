@@ -52,6 +52,7 @@ foreach ($products as $p) {
         "id"            => (int)$p['id'],
         "name"          => $p['name'],
         "price"         => (float)$p['price'],
+        "discount_percent" => (int)($p['discount_percent'] ?? 0),
         "deposit_price" => (float)($p['deposit_price'] ?? 0),
         "description"   => $p['description'],
         "image"         => $imageUrl,
@@ -81,6 +82,7 @@ foreach ($products as $p) {
     $id = $_POST['id'] ?? 0;
     $name = trim($_POST['name'] ?? '');
     $price = $_POST['price'] ?? 0;
+    $discount_percent = (int)($_POST['discount_percent'] ?? 0);
     $deposit_price = $_POST['deposit_price'] ?? 0;
     $category_id = $_POST['category_id'] ?? 0;
     $description = $_POST['description'] ?? '';
@@ -121,7 +123,7 @@ foreach ($products as $p) {
         }
     }
     
-    $result = $productModel->update($id, $name, $price, $deposit_price, $description, $image_name, $stock, $category_id, $sizes, $colors, $gender, $rented_count);
+    $result = $productModel->update($id, $name, $price, $discount_percent, $deposit_price, $description, $image_name, $stock, $category_id, $sizes, $colors, $gender, $rented_count);
     
     if ($result) {
         return $this->json(['success' => true, 'message' => "Cập nhật thành công"]);
@@ -140,28 +142,25 @@ foreach ($products as $p) {
     ini_set('display_errors', 1);
     error_reporting(E_ALL);
     
-    header('Content-Type: application/json');
-    
     if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-        echo json_encode(['success' => false, 'error' => 'Method không hợp lệ']);
-        return;
+        return $this->json(['success' => false, 'error' => 'Method không hợp lệ']);
     }
     
     $name = trim($_POST['name'] ?? '');
-$price = (int)($_POST['price'] ?? 0);
-$deposit_price = (int)($_POST['deposit_price'] ?? 0);
-$category_id = (int)($_POST['category_id'] ?? 0);
-$description = $_POST['description'] ?? '';
-$stock = (int)($_POST['stock'] ?? 0);
-$rented_count = (int)($_POST['rented_count'] ?? 0);
-$sizes = $_POST['sizes'] ?? 'S,M,L,XL';
-$colors = $_POST['colors'] ?? 'Trắng,Đen,Đỏ';
-$gender = $_POST['gender'] ?? 'unisex';
+    $price = (int)($_POST['price'] ?? 0);
+    $discount_percent = (int)($_POST['discount_percent'] ?? 0);
+    $deposit_price = (int)($_POST['deposit_price'] ?? 0);
+    $category_id = (int)($_POST['category_id'] ?? 0);
+    $description = $_POST['description'] ?? '';
+    $stock = (int)($_POST['stock'] ?? 0);
+    $rented_count = (int)($_POST['rented_count'] ?? 0);
+    $sizes = $_POST['sizes'] ?? 'S,M,L,XL';
+    $colors = $_POST['colors'] ?? 'Trắng,Đen,Đỏ';
+    $gender = $_POST['gender'] ?? 'unisex';
     $image_name = null;
     
     if ($name == '' || $price <= 0 || $category_id <= 0) {
-        echo json_encode(['success' => false, 'error' => "Dữ liệu không hợp lệ"]);
-        return;
+        return $this->json(['success' => false, 'error' => "Dữ liệu không hợp lệ"]);
     }
     
     if (!empty($_FILES['image']['name'])) {
@@ -172,12 +171,12 @@ $gender = $_POST['gender'] ?? 'unisex';
     }
     
     $productModel = new \App\Models\Product();
-    $result = $productModel->create($name, $price, $deposit_price, $description, $image_name, $stock, $category_id, $sizes, $colors, $gender, $rented_count);
+    $result = $productModel->create($name, $price, $discount_percent, $deposit_price, $description, $image_name, $stock, $category_id, $sizes, $colors, $gender, $rented_count);
     
     if ($result) {
-        echo json_encode(['success' => true, 'message' => 'Thêm sản phẩm thành công']);
+        return $this->json(['success' => true, 'message' => 'Thêm sản phẩm thành công']);
     } else {
-        echo json_encode(['success' => false, 'error' => 'Thêm thất bại']);
+        return $this->json(['success' => false, 'error' => 'Thêm thất bại']);
     }
 }
     

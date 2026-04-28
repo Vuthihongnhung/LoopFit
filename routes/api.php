@@ -14,3 +14,7 @@ $router->post('/api/address/add', 'UserController@addAddress');
 $router->post('/api/address/update', 'UserController@updateAddress');
 $router->post('/api/address/delete', 'UserController@deleteAddress');
 $router->post('/api/address/set-default', 'UserController@setDefaultAddress');
+// Admin - Quản lý đơn hàng API
+$router->get('/admin/api/orders', 'App\Controllers\Admin\OrderController@apiOrders');
+$router->post('/admin/orders/approvePayment', 'App\Controllers\Admin\OrderController@approvePayment');
+$router->get('/admin/orders/detail', 'App\Controllers\Admin\OrderController@detail');
