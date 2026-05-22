@@ -478,6 +478,14 @@ class Order extends Model
             return false;
         }
 
+        // Lấy danh sách sản phẩm trong đơn
+        $items = $this->getOrderItems($orderId);
+        if (empty($items)) {
+            error_log("completeReturn: Không có sản phẩm nào cho đơn $orderId");
+            return false;
+        }
+
+        $productModel = new \App\Models\Product();
         $this->conn->begin_transaction();
         try {
             $actualReturnDate = date('Y-m-d');
@@ -489,9 +497,11 @@ class Order extends Model
             // Chuyển deposit_status sang 'pending_return' để admin có thể hoàn cọc
             $this->updateDepositStatus($orderId, 'pending_return');
 
+            // Tăng rented_count (tổng lượt thuê) và giảm rented_quantity (số đang thuê) cho từng sản phẩm
             foreach ($items as $item) {
-            $productModel->increaseRentedCount($item['product_id'], $item['quantity']);
-        }
+                $productModel->increaseRentedCount($item['product_id'], $item['quantity']);
+                $productModel->decreaseRentedQuantity($item['product_id'], $item['quantity']);
+            }
 
             $this->conn->commit();
             return true;
@@ -500,8 +510,8 @@ class Order extends Model
             error_log("completeReturn error: " . $e->getMessage());
             return false;
         }
-}
-
+    }
+    
     /* ===== Cập nhật nhiều trường đơn hàng cùng lúc ===== */
     public function updateOrder($id, $data)
     {
