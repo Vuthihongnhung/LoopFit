@@ -1,7 +1,3 @@
-<?php
-// views/user/auth/register.php
-// Nội dung chính cho layout user
-?>
 <div class="auth-container">
     <h1>LoopFit</h1>
     <div class="subtitle">Tạo tài khoản để trải nghiệm thuê quần áo</div>

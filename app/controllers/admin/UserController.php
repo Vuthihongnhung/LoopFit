@@ -11,16 +11,19 @@ class UserController extends Controller
     {
         AdminMiddleware::check();
     }
-    
-   public function index()
-{
-    ob_start();
-    require_once __DIR__ . '/../../../views/admin/users/index.php'; // hoặc promotions
-    $content = ob_get_clean();
-    $pageTitle = 'Quản lý người dùng'; // hoặc tương ứng
-    $activeMenu = 'users'; // hoặc promotions
-    require_once __DIR__ . '/../../../views/layouts/admin.php';
-}
+
+    /* ===== Hiển thị trang danh sách người dùng ===== */
+    public function index()
+    {
+        ob_start();
+        require_once __DIR__ . '/../../../views/admin/users/index.php'; 
+        $content = ob_get_clean();
+        $pageTitle = 'Quản lý người dùng'; 
+        $activeMenu = 'users'; 
+        require_once __DIR__ . '/../../../views/layouts/admin.php';
+    }
+
+    /* ===== API: Lấy danh sách tất cả người dùng (dùng cho AJAX) ===== */
     public function apiGetList()
     {
         $userModel = new User();
@@ -32,7 +35,7 @@ class UserController extends Controller
                 "id" => (int)$row["id"],
                 "name" => $row["name"],
                 "email" => $row["email"],
-                "status" => $row["status"] ?? 'active',   // ✅ THÊM DÒNG NÀY
+                "status" => $row["status"] ?? 'active',  
                 "created_at" => $row["created_at"]
             ];
         }
@@ -43,6 +46,7 @@ class UserController extends Controller
         ]);
     }
     
+    /* ===== API: Chuyển đổi trạng thái của người dùng ===== */
     public function toggleStatus()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

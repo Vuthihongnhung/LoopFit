@@ -1,5 +1,4 @@
 $(document).ready(function() {
-    // Helper hiển thị toast (nếu cần)
     function showToast(type, message, title) {
         let toast = $('#toast-notification');
         if (toast.length === 0) {
@@ -77,7 +76,7 @@ $(document).ready(function() {
         });
     });
 
-    // Xử lý đăng ký (giữ nguyên nếu cần)
+    // Xử lý đăng ký 
     $('#register-form').on('submit', function(e) {
         e.preventDefault();
         $('.error-message').hide();
@@ -142,6 +141,101 @@ $(document).ready(function() {
                 let msg = 'Có lỗi xảy ra';
                 if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
                 showToast('error', msg, 'Lỗi hệ thống');
+            }
+        });
+    });
+
+    // Xử lý đăng ký 
+    // Modal xác nhận đăng xuất
+    if ($('#logoutModal').length === 0) {
+        $('body').append(`
+            <div id="logoutModal" class="logout-modal" style="display: none;">
+                <div class="logout-modal-content">
+                    <div class="logout-modal-header">
+                        <h4>Xác nhận đăng xuất</h4>
+                        <span class="logout-close">&times;</span>
+                    </div>
+                    <div class="logout-modal-body">
+                        Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+                    </div>
+                    <div class="logout-modal-footer">
+                        <button id="logoutCancelBtn" class="btn btn-secondary">Hủy</button>
+                        <button id="logoutConfirmBtn" class="btn btn-danger">Đăng xuất</button>
+                    </div>
+                </div>
+            </div>
+        `);
+        if ($('#logoutModalStyle').length === 0) {
+            $('head').append(`
+                <style id="logoutModalStyle">
+                    .logout-modal {
+                        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                        background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+                        z-index: 9999;
+                    }
+                    .logout-modal-content {
+                        background: white; border-radius: 12px; width: 400px; max-width: 90%;
+                        box-shadow: 0 5px 20px rgba(0,0,0,0.3); animation: modalFadeIn 0.3s;
+                    }
+                    @keyframes modalFadeIn {
+                        from { opacity: 0; transform: translateY(-50px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    .logout-modal-header {
+                        padding: 15px 20px; border-bottom: 1px solid #eee;
+                        display: flex; justify-content: space-between; align-items: center;
+                    }
+                    .logout-modal-header h4 { margin: 0; font-size: 18px; }
+                    .logout-close { font-size: 24px; cursor: pointer; color: #999; }
+                    .logout-close:hover { color: #333; }
+                    .logout-modal-body { padding: 20px; font-size: 16px; color: #555; }
+                    .logout-modal-footer {
+                        padding: 15px 20px; border-top: 1px solid #eee; text-align: right;
+                    }
+                    .logout-modal-footer button {
+                        padding: 8px 20px; margin-left: 10px; border: none; border-radius: 6px;
+                        cursor: pointer; font-size: 14px;
+                    }
+                    .btn-secondary { background: #6c757d; color: white; }
+                    .btn-danger { background: #dc3545; color: white; }
+                </style>
+            `);
+        }
+    }
+
+    $(document).on('click', '.logout-btn, #logout-btn, a[href*="logout"]', function(e) {
+        e.preventDefault();
+        $('#logoutModal').fadeIn();
+    });
+
+    $(document).on('click', '#logoutCancelBtn, .logout-close', function() {
+        $('#logoutModal').fadeOut();
+    });
+
+    $(document).on('click', '#logoutModal', function(e) {
+        if ($(e.target).is('#logoutModal')) {
+            $('#logoutModal').fadeOut();
+        }
+    });
+
+    $(document).on('click', '#logoutConfirmBtn', function() {
+        $('#logoutModal').fadeOut();
+        $.ajax({
+            url: '/LoopFit/public/logout',
+            type: 'GET',
+            dataType: 'json',
+            success: function(res) {
+                if (res.success) {
+                    showToast('success', res.message, 'Đăng xuất thành công');
+                    setTimeout(function() {
+                        window.location.href = '/LoopFit/public/login';
+                    }, 1000);
+                } else {
+                    showToast('error', res.message || 'Đăng xuất thất bại', 'Lỗi');
+                }
+            },
+            error: function() {
+                window.location.href = '/LoopFit/public/logout';
             }
         });
     });

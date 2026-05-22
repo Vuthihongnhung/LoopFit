@@ -6,7 +6,7 @@
     <title><?php echo $pageTitle ?? 'Admin Panel'; ?> | LoopFit</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="http://localhost:8080/LoopFit/public/assets/admin/css/admin.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/admin/css/admin.css">
 </head>
 <body>
     <div class="app">
@@ -17,24 +17,62 @@
                 <span>LoopFit Admin</span>
             </div>
             <nav class="sidebar-nav">
+                <!-- Dashboard  -->
                 <a href="<?php echo BASE_URL; ?>/index.php?url=admin/dashboard" class="nav-item <?php echo ($activeMenu === 'dashboard') ? 'active' : ''; ?>">
                     <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
                 </a>
-                <a href="<?php echo BASE_URL; ?>/index.php?url=admin/products" class="nav-item <?php echo ($activeMenu === 'products') ? 'active' : ''; ?>">
-                    <i class="fas fa-box"></i> <span>Sản phẩm</span>
-                </a>
-                <a href="<?php echo BASE_URL; ?>/index.php?url=admin/orders" class="nav-item <?php echo ($activeMenu === 'orders') ? 'active' : ''; ?>">
-                    <i class="fas fa-shopping-cart"></i> <span>Đơn hàng</span>
-                </a>
-                <a href="<?php echo BASE_URL; ?>/index.php?url=admin/users" class="nav-item <?php echo ($activeMenu === 'users') ? 'active' : ''; ?>">
-                    <i class="fas fa-users"></i> <span>Người dùng</span>
-                </a>
-                <a href="<?php echo BASE_URL; ?>/index.php?url=admin/promotions" class="nav-item <?php echo ($activeMenu === 'promotions') ? 'active' : ''; ?>">
-                    <i class="fas fa-tags"></i> <span>Khuyến mãi</span>
-                </a>
-                <a href="<?php echo BASE_URL; ?>/index.php?url=admin/categories" class="nav-item <?php echo ($activeMenu === 'categories') ? 'active' : ''; ?>">
-                    <i class="fas fa-folder-tree"></i> <span>Danh mục</span>
-                </a>
+
+                <!-- ===== QUẢN LÝ SẢN PHẨM ===== -->
+                <div class="nav-group">
+                    <div class="nav-group-header <?php echo (in_array($activeMenu, ['categories', 'products', 'reviews'])) ? 'active' : ''; ?>">
+                        <i class="fas fa-box"></i> <span>QUẢN LÝ SẢN PHẨM</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="<?php echo BASE_URL; ?>/index.php?url=admin/categories" class="nav-item-child <?php echo ($activeMenu === 'categories') ? 'active' : ''; ?>">
+                            <i class="fas fa-folder-tree"></i> <span>Danh mục</span>
+                        </a>
+                        <a href="<?php echo BASE_URL; ?>/index.php?url=admin/products" class="nav-item-child <?php echo ($activeMenu === 'products') ? 'active' : ''; ?>">
+                            <i class="fas fa-box"></i> <span>Sản phẩm</span>
+                        </a>
+                        <a href="<?php echo BASE_URL; ?>/index.php?url=admin/reviews" class="nav-item-child <?php echo ($activeMenu === 'reviews') ? 'active' : ''; ?>">
+                            <i class="fas fa-star"></i> <span>Đánh giá</span>
+                        </a>
+                        <a href="<?php echo BASE_URL; ?>/index.php?url=admin/promotions" class="nav-item-child <?php echo ($activeMenu === 'promotions') ? 'active' : ''; ?>">
+                            <i class="fas fa-tags"></i> <span>Khuyến mãi</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ===== QUẢN LÝ ĐƠN HÀNG ===== -->
+                <div class="nav-group">
+                    <div class="nav-group-header <?php echo (in_array($activeMenu, ['orders', 'payments'])) ? 'active' : ''; ?>">
+                        <i class="fas fa-shopping-cart"></i> <span>QUẢN LÝ ĐƠN HÀNG</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="<?php echo BASE_URL; ?>/index.php?url=admin/orders" class="nav-item-child <?php echo ($activeMenu === 'orders') ? 'active' : ''; ?>">
+                            <i class="fas fa-shopping-cart"></i> <span>Đơn hàng</span>
+                        </a>
+                        <a href="<?php echo BASE_URL; ?>/index.php?url=admin/payments" class="nav-item-child <?php echo ($activeMenu === 'payments') ? 'active' : ''; ?>">
+                            <i class="fas fa-credit-card"></i> <span>Thanh toán</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ===== QUẢN LÝ NGƯỜI DÙNG ===== -->
+                <div class="nav-group">
+                    <div class="nav-group-header <?php echo ($activeMenu === 'users') ? 'active' : ''; ?>">
+                        <i class="fas fa-users"></i> <span>QUẢN LÝ NGƯỜI DÙNG</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="<?php echo BASE_URL; ?>/index.php?url=admin/users" class="nav-item-child <?php echo ($activeMenu === 'users') ? 'active' : ''; ?>">
+                            <i class="fas fa-users"></i> <span>Người dùng</span>
+                        </a>
+                    </div>
+                </div>
+
             </nav>
             <div class="sidebar-footer">
                 <a href="<?php echo BASE_URL; ?>/index.php?url=admin/logout" class="nav-item">
@@ -60,9 +98,17 @@
     </div>
     <script src="<?php echo BASE_URL; ?>/assets/admin/js/admin.js"></script>
     <script>
+        // Toggle menu cha-con
+        document.querySelectorAll('.nav-group-header').forEach(header => {
+            header.addEventListener('click', function(e) {
+                e.preventDefault();
+                this.parentElement.classList.toggle('open');
+            });
+        });
+
         document.getElementById('menuToggle')?.addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('open');
         });
-    </script>
+    </>
 </body>
 </html>

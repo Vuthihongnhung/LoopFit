@@ -4,23 +4,90 @@ namespace App\Controllers\User;
 
 use Core\Controller;
 use App\Models\Product;
+use App\Models\Review;
+use App\Models\OrderItem;
+use App\Models\Category;
 
 class ProductController extends Controller
-{
+{ 
+    /* ===== Hiển thị trang danh sách sản phẩm ===== */
     public function index()
-{
+    {
+    $searchKeyword = $_GET['search'] ?? '';
     $categoryId = $_GET['category'] ?? null;
     $gender     = $_GET['gender'] ?? 'all';
     $priceRange = $_GET['price'] ?? 'all';
     $sort       = $_GET['sort'] ?? 'default';
+    $filter     = $_GET['filter'] ?? ''; // thêm: lọc đặc biệt (discount, ...)
 
     $productModel = new Product();
-    $products = $productModel->filterProducts($categoryId, $gender, $priceRange, $sort);
+    $categoryModel = new Category();
 
-    // Lấy thông tin breadcrumb nếu có category
+    // Xử lý tìm kiếm từ khóa
+    if (!empty($searchKeyword)) {
+        $products = $productModel->searchByName($searchKeyword);
+        $this->view('user/products', [
+            'products'       => $products,
+            'current_gender' => $gender,
+            'current_price'  => $priceRange,
+            'current_cat'    => $categoryId,
+            'breadcrumb'     => [],
+            'searchKeyword'  => $searchKeyword,
+            'isDiscountPage' => false
+        ]);
+        return;
+    }
+
+    // Lọc sản phẩm giảm giá
+    if ($filter === 'discount') {
+        $products = $productModel->getDiscountedProducts();
+        $this->view('user/products', [
+            'products'       => $products,
+            'current_gender' => $gender,
+            'current_price'  => $priceRange,
+            'current_cat'    => $categoryId,
+            'breadcrumb'     => [],
+            'searchKeyword'  => '',
+            'isDiscountPage' => true
+        ]);
+        return;
+    }
+
+    // Lọc sản phẩm mới (hàng mới về)
+    if ($filter === 'new') {
+        $products = $productModel->getNewProducts();
+        $this->view('user/products', [
+            'products'       => $products,
+            'current_gender' => $gender,
+            'current_price'  => $priceRange,
+            'current_cat'    => $categoryId,
+            'breadcrumb'     => [],
+            'searchKeyword'  => '',
+            'isDiscountPage' => false,
+            'isNewPage'      => true
+        ]);
+        return;
+    }
+
+    // Lọc theo danh mục (bao gồm cả danh mục con)
+    $categoryIds = [];
+    if ($categoryId) {
+        // Lấy tất cả danh mục con của danh mục cha
+        $categoryIds = $categoryModel->getAllDescendants($categoryId);
+        if (empty($categoryIds)) {
+            $categoryIds = [$categoryId];
+        }
+    }
+
+    if (!empty($categoryIds)) {
+        $products = $productModel->getProductsByCategories($categoryIds, $gender, $priceRange, $sort);
+    } else {
+        $products = $productModel->filterProducts(null, $gender, $priceRange, $sort);
+    }
+
+    // Tạo breadcrumb (đường dẫn điều hướng) cho danh mục
     $breadcrumb = [];
     if ($categoryId) {
-        $categoryModel = new \App\Models\Category();
         $breadcrumb = $categoryModel->getBreadcrumb($categoryId);
     }
 
@@ -29,41 +96,172 @@ class ProductController extends Controller
         'current_gender' => $gender,
         'current_price'  => $priceRange,
         'current_cat'    => $categoryId,
-        'breadcrumb'     => $breadcrumb
+        'breadcrumb'     => $breadcrumb,
+        'searchKeyword'  => '',
+        'isDiscountPage' => false
     ]);
-}
+    }
 
-   public function show($id)
-{
+    /* ===== API: Lấy danh sách biến thể (size, màu sắc) của sản phẩm ===== */
+    public function getVariants() {
+        header('Content-Type: application/json');
+        $productId = (int)($_GET['product_id'] ?? 0);
+        if (!$productId) {
+            echo json_encode(['success' => false, 'message' => 'Thiếu product_id']);
+            return;
+        }
+        $productModel = new Product();
+        $product = $productModel->getById($productId);
+        if (!$product) {
+            echo json_encode(['success' => false, 'message' => 'Sản phẩm không tồn tại']);
+            return;
+        }
+        $sizes = explode(',', $product['sizes'] ?? 'S,M,L,XL');
+        $colors = explode(',', $product['colors'] ?? 'Trắng,Đen,Đỏ');
+        echo json_encode([
+            'success' => true,
+            'sizes' => array_map('trim', $sizes),
+            'colors' => array_map('trim', $colors)
+        ]);
+    }
+
+    public function getOptions() {
+    header('Content-Type: application/json');
+    $productId = (int)($_GET['id'] ?? 0);
+    if ($productId <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid product ID']);
+        return;
+    }
     $productModel = new Product();
-    $product = $productModel->getById($id);
+    $product = $productModel->getById($productId);
+    if (!$product) {
+        echo json_encode(['success' => false, 'message' => 'Product not found']);
+        return;
+    }
+    // Giả sử trong bảng products có cột sizes và colors 
+    $sizes = array_map('trim', explode(',', $product['sizes'] ?? 'S,M,L,XL'));
+    $colors = array_map('trim', explode(',', $product['colors'] ?? 'Trắng,Đen,Đỏ'));
+    echo json_encode([
+        'success' => true,
+        'sizes' => $sizes,
+        'colors' => $colors
+    ]);
+    }
+
+    /* ===== Hiển thị chi tiết sản phẩm ===== */
+    public function show($id)
+    {
+    $productModel = new Product();
+    $product = $productModel->getWithRating($id);
     if (!$product) {
         http_response_code(404);
         echo "Sản phẩm không tồn tại";
         exit;
     }
-    // Lấy sản phẩm cùng danh mục (dựa trên category_id)
+
+    // Tính số lượng có sẵn và trạng thái tồn kho
+    $stock = (int)($product['stock'] ?? 0);
+    $rentedQuantity = (int)($product['rented_quantity'] ?? 0);
+    $available = $stock - $rentedQuantity;
+
+    if ($available > 0) {
+        $stockStatus = 'instock';      // Còn hàng
+    } elseif ($rentedQuantity > 0) {
+        $stockStatus = 'rented';       // Đang được thuê hết
+    } else {
+        $stockStatus = 'outofstock';   // Hết hàng (stock = 0)
+    }
+
+    // Tính giá hiện tại sau giảm giá
+    $currentPrice = $product['price'];
+    $discountPercent = (int)($product['discount_percent'] ?? 0);
+    if ($discountPercent > 0) {
+        $currentPrice = $product['price'] * (100 - $discountPercent) / 100;
+    }
+
     $related = [];
     if (!empty($product['category_id'])) {
         $related = $productModel->getRelatedProducts($product['category_id'], $id, 4);
     }
+
+    $reviewModel = new Review();
+    $reviews = $reviewModel->getByProduct($id);
+
+    $userCanReview = false;
+    if (isset($_SESSION['user_id'])) {
+        $orderItemModel = new OrderItem();
+        $userCanReview = $orderItemModel->hasUserBoughtProduct($id, $_SESSION['user_id']);
+    }
+
     $this->view('user/product_detail', [
         'product' => $product,
-        'relatedProducts' => $related
+        'currentPrice' => $currentPrice,
+        'relatedProducts' => $related,
+        'reviews' => $reviews,
+        'userCanReview' => $userCanReview,
+        'available' => $available,           
+        'stockStatus' => $stockStatus        
     ]);
-}
+    }
 
-   public function filterApi()
-{
-    $category = $_GET['category'] ?? null;
-    $gender = $_GET['gender'] ?? 'all';
-    $price = $_GET['price'] ?? 'all';
+    /* ===== API: Lọc sản phẩm và trả về JSON ===== */
+    public function filterApi()
+    {
+        $categoryId = $_GET['category'] ?? null;
+        $gender = $_GET['gender'] ?? 'all';
+        $price = $_GET['price'] ?? 'all';
+        $sort = $_GET['sort'] ?? 'default';
+        $search = $_GET['search'] ?? '';
 
-    $productModel = new Product();
-    $products = $productModel->filterProducts($category, $gender, $price, 'default');
+        $productModel = new Product();
+        $categoryModel = new \App\Models\Category();
 
+        $categoryIds = [];
+        if ($categoryId) {
+            $categoryIds = $categoryModel->getAllDescendants($categoryId);
+            if (empty($categoryIds)) {
+                $categoryIds = [$categoryId];
+            }
+        }
+
+        $products = $productModel->filterProducts($categoryIds, $gender, $price, $sort, $search);
+
+        header('Content-Type: application/json');
+        echo json_encode($products);
+        exit;
+    }
+
+    /* ===== API: Tìm kiếm sản phẩm theo từ khóa (dùng cho dropdown search) ===== */
+    public function searchApi()
+    {
+        $q = $_GET['q'] ?? '';
+        $productModel = new Product();
+        $products = $productModel->searchByName($q);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'data' => $products]);
+        exit;
+    }
+
+    /* ===== API kiểm tra số lượng sản phẩm khả dụng trong khoảng thời gian ===== */
+    public function checkStock() {
     header('Content-Type: application/json');
-    echo json_encode($products);
-    exit;
+    
+    $productId = (int)($_GET['product_id'] ?? 0);
+    $rentDate = $_GET['rent_date'] ?? '';
+    $returnDate = $_GET['return_date'] ?? '';
+    $quantity = (int)($_GET['quantity'] ?? 1);
+    
+    if (!$productId || !$rentDate || !$returnDate) {
+        echo json_encode(['success' => false, 'message' => 'Thiếu thông tin']);
+        return;
+    }
+    
+    $productModel = new Product();
+    $available = $productModel->getAvailableQuantity($productId, $rentDate, $returnDate);
+    
+    echo json_encode([
+        'success' => true,
+        'available' => $available
+    ]);
 }
 }

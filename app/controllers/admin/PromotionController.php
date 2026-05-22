@@ -12,20 +12,22 @@ class PromotionController extends Controller
         AdminMiddleware::check();
     }
     
- public function index()
-{
-    ob_start();
-    require_once __DIR__ . '/../../../views/admin/promotions/index.php';
-    $content = ob_get_clean();
-    $pageTitle = 'Quản lý khuyến mãi';
-    $activeMenu = 'promotions';
-    require_once __DIR__ . '/../../../views/layouts/admin.php';
-}
+    /* ===== Hiển thị trang danh sách khuyến mãi  ===== */
+    public function index()
+    {
+        ob_start();
+        require_once __DIR__ . '/../../../views/admin/promotions/index.php';
+        $content = ob_get_clean();
+        $pageTitle = 'Quản lý khuyến mãi';
+        $activeMenu = 'promotions';
+        require_once __DIR__ . '/../../../views/layouts/admin.php';
+    }
     
+    /* ===== API: Lấy danh sách tất cả khuyến mãi (dùng cho AJAX)  ===== */
     public function apiGetList()
     {
         $promotionModel = new Promotion();
-        $promotions = $promotionModel->getAll();
+        $promotions = $promotionModel->getAll(); 
         
         $formattedPromotions = [];
         foreach ($promotions as $row) {
@@ -43,6 +45,10 @@ class PromotionController extends Controller
                 "id" => (int)$row["id"],
                 "code" => $row["code"],
                 "discount_percent" => (int)$row["discount_percent"],
+                "discount_amount" => (float)($row["discount_amount"] ?? 0),
+                "min_order_value" => (float)($row["min_order_value"] ?? 0),
+                "usage_limit" => (int)($row["usage_limit"] ?? 0),
+                "used_count" => (int)($row["used_count"] ?? 0),
                 "start_date" => $row["start_date"],
                 "end_date" => $row["end_date"],
                 "status" => $status
@@ -55,59 +61,79 @@ class PromotionController extends Controller
         ]);
     }
     
+    /* ===== API: Thêm mới một mã khuyến mãi  ===== */
     public function store()
     {
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            return $this->json([
-                "success" => false,
-                "error" => "Method không hợp lệ"
-            ]);
+            return $this->json(['success' => false, 'error' => 'Method không hợp lệ']);
         }
         
         $code = strtoupper(trim($_POST['code'] ?? ''));
-        $discount = $_POST['discount_percent'] ?? 0;
+        $discount_percent = (int)($_POST['discount_percent'] ?? 0);
+        $discount_amount = (float)($_POST['discount_amount'] ?? 0);
+        $min_order_value = (float)($_POST['min_order_value'] ?? 0);
+        $usage_limit = (int)($_POST['usage_limit'] ?? 0);
         $start = $_POST['start_date'] ?? null;
         $end = $_POST['end_date'] ?? null;
         
-        if ($code == '' || $discount <= 0 || $discount > 100) {
-            return $this->json([
-                "success" => false,
-                "error" => "Dữ liệu không hợp lệ"
-            ]);
+        if ($code == '' || ($discount_percent <= 0 && $discount_amount <= 0)) {
+            return $this->json(['success' => false, 'error' => 'Dữ liệu không hợp lệ: cần nhập giảm giá % hoặc số tiền']);
         }
         
         $promotionModel = new Promotion();
         
         if ($promotionModel->checkExists($code)) {
-            return $this->json([
-                "success" => false,
-                "error" => "Mã giảm giá đã tồn tại"
-            ]);
+            return $this->json(['success' => false, 'error' => 'Mã giảm giá đã tồn tại']);
         }
         
-        $result = $promotionModel->create($code, $discount, $start, $end);
+        $result = $promotionModel->create($code, $discount_percent, $discount_amount, $min_order_value, $usage_limit, $start, $end);
         
         if ($result) {
-            return $this->json([
-                "success" => true,
-                "message" => "Tạo mã thành công",
-                "id" => $promotionModel->getLastId()
-            ]);
+            return $this->json(['success' => true, 'message' => 'Tạo mã thành công', 'id' => $promotionModel->getLastId()]);
         } else {
-            return $this->json([
-                "success" => false,
-                "error" => "Tạo mã thất bại"
-            ]);
+            return $this->json(['success' => false, 'error' => 'Tạo mã thất bại']);
         }
     }
-        public function delete()
+
+    /* ===== API: Cập nhật mã khuyến mãi  ===== */
+    public function update()
+    {
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            return $this->json(['success' => false, 'error' => 'Method không hợp lệ']);
+        }
+        
+        $id = (int)($_POST['id'] ?? 0);
+        $code = strtoupper(trim($_POST['code'] ?? ''));
+        $discount_percent = (int)($_POST['discount_percent'] ?? 0);
+        $discount_amount = (float)($_POST['discount_amount'] ?? 0);
+        $min_order_value = (float)($_POST['min_order_value'] ?? 0);
+        $usage_limit = (int)($_POST['usage_limit'] ?? 0);
+        $start = $_POST['start_date'] ?? null;
+        $end = $_POST['end_date'] ?? null;
+        
+        if ($id <= 0 || empty($code) || ($discount_percent <= 0 && $discount_amount <= 0)) {
+            return $this->json(['success' => false, 'error' => 'Dữ liệu không hợp lệ']);
+        }
+        
+        $promotionModel = new Promotion();
+        $result = $promotionModel->update($id, $code, $discount_percent, $discount_amount, $min_order_value, $usage_limit, $start, $end);
+        
+        if ($result) {
+            return $this->json(['success' => true, 'message' => 'Cập nhật thành công']);
+        } else {
+            return $this->json(['success' => false, 'error' => 'Cập nhật thất bại']);
+        }
+    }
+    
+    /* ===== API: Xóa mã khuyến mãi  ===== */
+    public function delete()
     {
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             return $this->json(['success' => false, 'error' => 'Method không hợp lệ']);
         }
         
         $id = $_POST['id'] ?? 0;
-        $promotionModel = new \App\Models\Promotion();
+        $promotionModel = new Promotion();
         $result = $promotionModel->delete($id);
         
         return $this->json(['success' => $result]);

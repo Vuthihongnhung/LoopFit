@@ -23,4 +23,24 @@ class Model
 
         $this->conn->set_charset($config['charset'] ?? 'utf8mb4');
     }
+
+    public function getConnection()
+    {
+        return $this->conn;
+    }
+
+    public function beginTransaction()
+    {
+        $this->conn->begin_transaction();
+    }
+
+    public function commit()
+    {
+        $this->conn->commit();
+    }
+
+    public function rollback()
+    {
+        $this->conn->rollback();
+    }
 }

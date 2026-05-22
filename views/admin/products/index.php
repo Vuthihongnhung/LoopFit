@@ -1,44 +1,136 @@
 <?php 
 $pageTitle = 'Quản lý sản phẩm'; 
 $activeMenu = 'products';
+$baseUrl = BASE_URL ?? '/LoopFit/public';
 ?>
-<script>const BASE_URL = 'http://localhost:8080/LoopFit/public';</script>
+<script>
+    const BASE_URL = '<?php echo $baseUrl; ?>';
+</script>
 <div class="products-page">
     <div class="page-header">
         <h1><i class="fas fa-box"></i> Sản phẩm</h1>
-        <a href="http://localhost:8080/LoopFit/public/index.php?url=admin/products/create" class="btn btn-primary">
-    <i class="fas fa-plus"></i> Thêm sản phẩm
-</a>
+        <a href="<?php echo $baseUrl; ?>/admin/products/create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Thêm sản phẩm
+        </a>
     </div>
 
     <div class="card">
         <div class="card-header">
             <h3><i class="fas fa-list"></i> Danh sách sản phẩm</h3>
-            <div class="search-box">
-                <input type="text" id="searchProduct" placeholder="Tìm kiếm sản phẩm..." class="form-control">
+            <div class="filter-bar" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <div class="search-box">
+                    <input type="text" id="searchProduct" placeholder="Tìm kiếm sản phẩm..." class="form-control">
+                </div>
+                <select id="filterGender" class="form-control" style="width: auto;">
+                    <option value="">Tất cả giới tính</option>
+                    <option value="male">👨 Nam</option>
+                    <option value="female">👩 Nữ</option>
+                    <option value="unisex">🔄 Unisex</option>
+                </select>
+                <select id="filterCategoryGroup" class="form-control" style="width: auto;">
+                    <option value="">Tất cả nhóm</option>
+                    <?php if (!empty($parentCategories)): ?>
+                        <?php foreach ($parentCategories as $cat): ?>
+                            <option value="<?= $cat['id'] ?>">
+                                <?= htmlspecialchars($cat['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option value="" disabled>Chưa có danh mục</option>
+                    <?php endif; ?>
+                </select>
+                <button id="resetFilter" class="btn btn-secondary" style="padding: 8px 16px;">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
             </div>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="data-table" id="productsTable">
+            <div class="table-responsive" style="overflow-x: auto;">
+                <table class="data-table" id="productsTable" style="min-width: 1200px;">
                     <thead>
-    <tr>
-        <th>ID</th>
-        <th>Ảnh</th>
-        <th>Tên sản phẩm</th>
-        <th>Giá</th>
-        <th>Giá cọc</th>
-        <th>Tồn kho</th>
-        <th>Danh mục</th>
-        <th>Giới tính</th>
-        <th>Màu sắc</th>
-        <th>Kích thước</th>
-        <th>Số lần thuê</th>
-        <th>Thao tác</th>
-    </tr>
-</thead>
-                    <tbody>
-                        <td><td colspan="12" class="text-center">Đang tải...</td></tr>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ảnh</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Giá</th>
+                            <th>Giảm giá (%)</th>
+                            <th>Giá cọc</th>
+                            <th>Tồn kho</th>
+                            <th>Đang thuê</th>
+                            <th>Còn lại</th>
+                            <th>Trạng thái</th>
+                            <th>Danh mục</th>
+                            <th>Giới tính</th>
+                            <th>Màu sắc</th>
+                            <th>Kích thước</th>
+                            <th>Số lần thuê</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody">
+                        <?php if (!empty($products)): ?>
+                            <?php foreach ($products as $product): 
+                                $stock = (int)($product['stock'] ?? 0);
+                                $currentRented = max(0, (int)($product['current_rented'] ?? 0));
+                                $available = max(0, $product['stock'] - $currentRented);
+                                
+                                if ($available > 0) {
+                                    $status = 'Còn hàng';
+                                    $statusClass = 'status-instock';
+                                } elseif ($currentRented > 0) {
+                                    $status = 'Đang được thuê';
+                                    $statusClass = 'status-rented';
+                                } else {
+                                    $status = 'Hết hàng';
+                                    $statusClass = 'status-outstock';
+                                }
+                            ?>
+                                <tr data-gender="<?= htmlspecialchars($product['gender'] ?? 'unisex') ?>" 
+                                    data-category-id="<?= (int)($product['category_id'] ?? 0) ?>"
+                                    data-product-name="<?= htmlspecialchars($product['name'] ?? '') ?>">
+                                    <td><?= (int)($product['id'] ?? 0) ?></td>
+                                    <td>
+                                        <?php 
+                                        $imgUrl = $product['image_url'] ?? '';
+                                        if (!empty($imgUrl)): ?>
+                                            <img src="<?= htmlspecialchars($imgUrl) ?>" alt="<?= htmlspecialchars($product['name'] ?? '') ?>" style="width: 50px; height: 50px; object-fit: cover;">
+                                        <?php else: ?>
+                                            <span class="no-image">No image</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?= htmlspecialchars($product['name'] ?? '') ?></td>
+                                    <td><?= number_format($product['price'] ?? 0, 0, ',', '.') ?>₫</td>
+                                    <td class="discount-cell"><?= (int)($product['discount_percent'] ?? 0) ?>%</td>
+                                    <td><?= number_format($product['deposit_price'] ?? 0, 0, ',', '.') ?>₫</td>
+                                    <td><?= $stock ?></td>
+                                    <td><?= $currentRented ?></td>
+                                    <td><?= $available ?></td>
+                                    <td class="<?= $statusClass ?>">
+                                        <?= $status ?>
+                                        <?php if ($available > 0): ?>
+                                            <span class="stock-badge">(còn <?= $available ?>)</span>
+                                        <?php elseif ($currentRented > 0): ?>
+                                            <span class="rented-badge">(<?= $currentRented ?> đang thuê)</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?= htmlspecialchars($product['category_name'] ?? '') ?></td>
+                                    <td><?= ucfirst($product['gender'] ?? 'unisex') ?></td>
+                                    <td><?= htmlspecialchars($product['colors'] ?? '') ?></td>
+                                    <td><?= htmlspecialchars($product['sizes'] ?? '') ?></td>
+                                    <td><?= (int)($product['rented_count'] ?? 0) ?></td>
+                                    <td class="actions">
+                                        <a href="<?= $baseUrl ?>/admin/products/edit?id=<?= $product['id'] ?>" class="btn btn-sm btn-warning" title="Sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger delete-product" data-id="<?= $product['id'] ?>" data-name="<?= htmlspecialchars($product['name'] ?? '') ?>" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr><td colspan="16" class="text-center">Chưa có sản phẩm nào.</td></tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -46,90 +138,65 @@ $activeMenu = 'products';
     </div>
 </div>
 
+<style>
+.status-instock { color: #10b981; font-weight: 600; }
+.status-rented { color: #f59e0b; font-weight: 600; }
+.status-outstock { color: #ef4444; font-weight: 600; }
+.stock-badge, .rented-badge { font-size: 11px; font-weight: normal; color: #6b7280; }
+.table-responsive { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th, .data-table td { padding: 10px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+.data-table th { background-color: #f9fafb; font-weight: 600; }
+</style>
+
 <script>
-function loadProducts() {
-    fetch(BASE_URL + '/index.php?url=admin/api/products')
-        .then(res => res.json())
-        .then(data => {
-            let html = '';
-            if (data.data && data.data.length > 0) {
-                data.data.forEach(p => {
-                    let imageUrl = p.image ? p.image : BASE_URL + '/uploads/default.png';
-                    let categoryName = p.category_name || 'Chưa phân loại';
-                    html += `<tr>
-    <td>${p.id}</td>
-    <td><img src="${imageUrl}" width="50" height="50" style="object-fit:cover; border-radius:8px;"></td>
-    <td><strong>${p.name}</strong></td>
-    <td class="price">${new Intl.NumberFormat('vi-VN').format(p.price)}đ</td>
-    <td class="price">${new Intl.NumberFormat('vi-VN').format(p.deposit_price)}đ</td>
-    <td><span class="badge ${p.stock > 0 ? 'active' : 'banned'}">${p.stock}</span></td>
-    <td><span class="badge active">${categoryName}</span></td>
-    <td>${p.gender || 'unisex'}</td>
-    <td>${p.colors || '-'}</td>
-    <td>${p.sizes || '-'}</td>
-    <td>${p.rented_count || 0}</td>
-    <td>
-        <button class="btn-icon edit" data-id="${p.id}" title="Sửa"><i class="fas fa-edit"></i></button>
-<button class="btn-icon delete" data-id="${p.id}" title="Xóa"><i class="fas fa-trash"></i></button>
-    </td>
-</tr>`;
-                });
-            } else {
-                html = '<tr><td colspan="12" class="text-center">📦 Không có sản phẩm nào</td></tr>';
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchProduct');
+    const genderSelect = document.getElementById('filterGender');
+    const categorySelect = document.getElementById('filterCategoryGroup');
+    const resetBtn = document.getElementById('resetFilter');
+    const tableRows = document.querySelectorAll('#productTableBody tr');
+
+    function filterTable() {
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const gender = genderSelect ? genderSelect.value : '';
+        const categoryId = categorySelect ? categorySelect.value : '';
+
+        tableRows.forEach(row => {
+            let show = true;
+
+            // Lọc theo tên sản phẩm 
+            if (searchTerm) {
+                const productName = row.getAttribute('data-product-name') || '';
+                if (!productName.toLowerCase().includes(searchTerm)) show = false;
             }
-            document.querySelector('#productsTable tbody').innerHTML = html;
-            
-            // Gán sự kiện xóa
-            document.querySelectorAll('.delete').forEach(btn => {
-                btn.onclick = () => deleteProduct(btn.dataset.id);
-            });
-            document.querySelectorAll('.edit').forEach(btn => {
-        btn.onclick = () => editProduct(btn.dataset.id);
-    });  
-        })
-        .catch(error => {
-            console.error('Lỗi khi gọi API:', error);
-            document.querySelector('#productsTable tbody').innerHTML = '<tr><td colspan="7" class="text-center">❌ Lỗi tải dữ liệu</td></tr>';
-        });
-}
-function editProduct(id) {
-    window.location.href = BASE_URL + '/index.php?url=admin/products/edit&id=' + id;
-}
-function deleteProduct(id) {
-    console.log('Xóa sản phẩm ID:', id);  
-    if(confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
-        console.log('Đã xác nhận xóa');  
-        fetch(BASE_URL + '/index.php?url=admin/products/delete', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `id=${id}`
-        }).then(res => res.json()).then(data => {
-            console.log('Kết quả:', data);  
-            if(data.success) {
-                showToast('Xóa sản phẩm thành công', 'success');
-                loadProducts();
-            } else alert('Xóa thất bại');
+
+            // Lọc theo giới tính
+            if (show && gender) {
+                const rowGender = row.getAttribute('data-gender') || '';
+                if (rowGender !== gender) show = false;
+            }
+
+            // Lọc theo danh mục
+            if (show && categoryId) {
+                const rowCat = row.getAttribute('data-category-id') || '';
+                if (rowCat !== categoryId) show = false;
+            }
+
+            row.style.display = show ? '' : 'none';
         });
     }
-}
 
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.className = 'toast-message';
-    toast.style.backgroundColor = type === 'success' ? '#10b981' : '#ef4444';
-    toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-
-document.getElementById('searchProduct')?.addEventListener('keyup', function() {
-    const searchTerm = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#productsTable tbody tr');
-    rows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
+    if (searchInput) searchInput.addEventListener('keyup', filterTable);
+    if (genderSelect) genderSelect.addEventListener('change', filterTable);
+    if (categorySelect) categorySelect.addEventListener('change', filterTable);
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (searchInput) searchInput.value = '';
+            if (genderSelect) genderSelect.value = '';
+            if (categorySelect) categorySelect.value = '';
+            filterTable();
+        });
+    }
 });
-
-loadProducts();
 </script>

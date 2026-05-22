@@ -1,9 +1,9 @@
 <?php
 return [
-    'host'     => 'switchback.proxy.rlwy.net',
-    'port'     => '33837',
+    'host'     => 'localhost',
+    'port'     => '3306',
     'username' => 'root',  
-    'password' => 'mavclMVRaRmauDIzWdhjdyRmVpVZxfYb',
-    'database' => 'railway', 
+    'password' => '',      
+    'database' => 'loopfit', 
     'charset'  => 'utf8mb4'
 ];
