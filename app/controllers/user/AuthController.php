@@ -15,67 +15,43 @@ class AuthController extends Controller
         exit;
     }
 
-        public function loginForm()
+    protected function isAjax()
     {
-        if (isset($_SESSION['user'])) {
-            header('Location: ' . BASE_URL . '/');
-            exit;
-        }
+        return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+               strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+    }
 
-        $email = $_SESSION['registered_email'] ?? '';
-        unset($_SESSION['registered_email']); // xóa sau khi lấy
-
-        if (method_exists($this, 'render')) {
-            return $this->view('user/auth/login', ['email' => $email]);
-        }
-
-        // fallback nếu không dùng view
-        echo '<h2>Đăng nhập</h2>';
-        echo '<form action="' . BASE_URL . '/login" method="POST">';
-        echo '<label>Email</label><br>';
-        echo '<input type="email" name="email" value="' . htmlspecialchars($email) . '" required><br><br>';
-        echo '<label>Mật khẩu</label><br>';
-        echo '<input type="password" name="password" required><br><br>';
-        echo '<button type="submit">Đăng nhập</button>';
-        echo '</form>';
+    protected function redirect($url)
+    {
+        header('Location: ' . BASE_URL . $url);
         exit;
     }
 
+    /* ===== Hiển thị form đăng nhập ===== */
+    public function loginForm()
+    {
+        if (isset($_SESSION['user'])) {
+            $this->redirect('/');
+        }
+        $email = $_SESSION['registered_email'] ?? '';
+        unset($_SESSION['registered_email']);
+        $this->view('user/auth/login', ['email' => $email]);
+    }
+
+    /* ===== Hiển thị form đăng ký ===== */
     public function registerForm()
     {
         if (isset($_SESSION['user'])) {
-            header('Location: ' . BASE_URL . '/');
-            exit;
+            $this->redirect('/');
         }
-
-        if (method_exists($this, 'render')) {
-            return $this->view('user/auth/register');
-        }
-
-        echo '<h2>Đăng ký</h2>';
-        echo '<form action="' . BASE_URL . '/register" method="POST">';
-        echo '<label>Họ tên</label><br>';
-        echo '<input type="text" name="name" required><br><br>';
-        echo '<label>Email</label><br>';
-        echo '<input type="email" name="email" required><br><br>';
-        echo '<label>Mật khẩu</label><br>';
-        echo '<input type="password" name="password" required><br><br>';
-        echo '<label>Số điện thoại</label><br>';
-        echo '<input type="text" name="phone"><br><br>';
-        echo '<label>Địa chỉ</label><br>';
-        echo '<textarea name="address"></textarea><br><br>';
-        echo '<button type="submit">Đăng ký</button>';
-        echo '</form>';
-        exit;
+        $this->view('user/auth/register');
     }
 
+    /* ===== Xử lý đăng ký tài khoản mới ===== */
     public function register()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Phương thức không hợp lệ'
-            ], 405);
+            return $this->jsonResponse(['success' => false, 'message' => 'Phương thức không hợp lệ'], 405);
         }
 
         $name = trim($_POST['name'] ?? '');
@@ -85,150 +61,138 @@ class AuthController extends Controller
         $address = trim($_POST['address'] ?? '');
 
         if ($name === '' || $email === '' || $password === '') {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Vui lòng nhập đầy đủ họ tên, email và mật khẩu'
-            ], 400);
+            return $this->jsonResponse(['success' => false, 'message' => 'Vui lòng nhập đầy đủ họ tên, email và mật khẩu'], 400);
         }
-
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Email không hợp lệ'
-            ], 400);
+            return $this->jsonResponse(['success' => false, 'message' => 'Email không hợp lệ'], 400);
         }
-
         if (strlen($password) < 6) {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Mật khẩu phải có ít nhất 6 ký tự'
-            ], 400);
+            return $this->jsonResponse(['success' => false, 'message' => 'Mật khẩu phải có ít nhất 6 ký tự'], 400);
         }
 
         $userModel = new User();
-        $existingUser = null;
-
-        if (method_exists($userModel, 'findByEmail')) {
-            $existingUser = $userModel->findByEmail($email);
-        } elseif (method_exists($userModel, 'getByEmail')) {
-            $existingUser = $userModel->getByEmail($email);
-        }
-
+        $existingUser = $userModel->getByEmail($email);
         if ($existingUser) {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Email đã được sử dụng'
-            ], 409);
+            return $this->jsonResponse(['success' => false, 'message' => 'Email đã được sử dụng'], 409);
         }
 
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
         $data = [
-            'name' => $name,
-            'email' => $email,
+            'name'     => $name,
+            'email'    => $email,
             'password' => $hashedPassword,
-            'phone' => $phone,
-            'address' => $address
+            'phone'    => $phone,
+            'address'  => $address,
+            'role'     => 'user',
+            'status'   => 'active'
         ];
-
-        if (!method_exists($userModel, 'create')) {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'User model chưa có hàm create()'
-            ], 500);
-        }
 
         $userId = $userModel->create($data);
-
         if (!$userId) {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Đăng ký thất bại'
-            ], 500);
+            return $this->jsonResponse(['success' => false, 'message' => 'Đăng ký thất bại'], 500);
         }
 
+        // Lưu session user
         $_SESSION['user'] = [
-            'id' => $userId,
-            'name' => $name,
-            'email' => $email,
-            'phone' => $phone,
+            'id'      => $userId,
+            'name'    => $name,
+            'email'   => $email,
+            'phone'   => $phone,
             'address' => $address,
-            'role' => 'user'
+            'role'    => 'user'
         ];
 
-        return $this->jsonResponse([
-            'success' => true,
-            'message' => 'Đăng ký thành công'
-        ]);
+        return $this->jsonResponse(['success' => true, 'message' => 'Đăng ký thành công']);
     }
 
+    /* ===== Xử lý đăng nhập ===== */
     public function login()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Phương thức không hợp lệ'
-            ], 405);
+            $this->loginForm();
+            return;
         }
 
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
-        if ($email === '' || $password === '') {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Vui lòng nhập email và mật khẩu'
-            ], 400);
+        if (empty($email) || empty($password)) {
+            $error = 'Vui lòng nhập email và mật khẩu';
+            if ($this->isAjax()) {
+                return $this->jsonResponse(['success' => false, 'message' => $error], 400);
+            } else {
+                $_SESSION['error'] = $error;
+                $this->redirect('/login');
+            }
         }
 
         $userModel = new User();
-        $user = null;
-
-        if (method_exists($userModel, 'findByEmail')) {
-            $user = $userModel->findByEmail($email);
-        } elseif (method_exists($userModel, 'getByEmail')) {
-            $user = $userModel->getByEmail($email);
-        }
+        $user = $userModel->getByEmail($email);
 
         if (!$user) {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Email không tồn tại'
-            ], 404);
+            $error = 'Email không tồn tại';
+            if ($this->isAjax()) {
+                return $this->jsonResponse(['success' => false, 'message' => $error], 404);
+            } else {
+                $_SESSION['error'] = $error;
+                $this->redirect('/login');
+            }
         }
 
-        if (!isset($user['password']) || !password_verify($password, $user['password'])) {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Mật khẩu không đúng'
-            ], 401);
+        if (!password_verify($password, $user['password'])) {
+            $error = 'Mật khẩu không đúng';
+            if ($this->isAjax()) {
+                return $this->jsonResponse(['success' => false, 'message' => $error], 401);
+            } else {
+                $_SESSION['error'] = $error;
+                $this->redirect('/login');
+            }
         }
 
+        // *** CHẶN ADMIN ĐĂNG NHẬP VÀO TRANG USER ***
+        if (isset($user['role']) && $user['role'] === 'admin') {
+            $error = 'Tài khoản quản trị không thể đăng nhập vào khu vực người dùng. Vui lòng đăng nhập qua trang quản trị.';
+            if ($this->isAjax()) {
+                return $this->jsonResponse(['success' => false, 'message' => $error], 403);
+            } else {
+                $_SESSION['error'] = $error;
+                $this->redirect('/login');
+            }
+        }
+
+        // Lưu session user
         $_SESSION['user'] = [
-            'id' => $user['id'],
-            'name' => $user['name'] ?? '',
-            'email' => $user['email'] ?? '',
-            'phone' => $user['phone'] ?? '',
+            'id'      => $user['id'],
+            'name'    => $user['name'],
+            'email'   => $user['email'],
+            'phone'   => $user['phone'] ?? '',
             'address' => $user['address'] ?? '',
-            'role' => $user['role'] ?? 'user'
+            'role'    => 'user'  
         ];
 
-        return $this->jsonResponse([
-            'success' => true,
-            'message' => 'Đăng nhập thành công'
-        ]);
+        $redirectUrl = BASE_URL . '/';
+
+        if ($this->isAjax()) {
+            return $this->jsonResponse([
+                'success'  => true,
+                'message'  => 'Đăng nhập thành công',
+                'redirect' => $redirectUrl
+            ]);
+        } else {
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
     }
 
+    /* ===== Đăng xuất ===== */
     public function logout()
     {
-        unset($_SESSION['user']);
-
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_unset();
-            session_destroy();
+        if ($this->isAjax()) {
+            unset($_SESSION['user']);
+            return $this->jsonResponse(['success' => true, 'message' => 'Đăng xuất thành công']);
+        } else {
+            unset($_SESSION['user']);
+            $this->redirect('/login');
         }
-
-        header('Location: ' . BASE_URL . '/');
-        exit;
     }
 }

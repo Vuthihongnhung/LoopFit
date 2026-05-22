@@ -4,6 +4,7 @@ namespace Core;
 class Controller {
     protected static $shared = [];
 
+    /* ===== Lưu trữ một giá trị dùng chung (share data) cho toàn bộ controller ===== */
     protected function share($key, $value) {
         self::$shared[$key] = $value;
     }
@@ -22,7 +23,8 @@ class Controller {
         }
     }
 
-    public function view($view, $data = []) {
+    /* ===== Hiển thị view với layout (mặc định) ===== */
+    public function view($view, $data = [], $useLayout = true) {
         if (!isset(self::$shared['cartCount'])) {
             $this->share('cartCount', $this->getGlobalCartCount());
         }
@@ -39,6 +41,13 @@ class Controller {
         require $viewPath;
         $content = ob_get_clean();
 
+        // Nếu không dùng layout thì chỉ xuất nội dung view
+        if (!$useLayout) {
+            echo $content;
+            return;
+        }
+
+        // Xác định layout dựa trên tên view (nếu view bắt đầu bằng admin hoặc có admin trong path)
         if (strpos($view, 'admin') === 0 || strpos($view, '/admin') !== false) {
             $layoutPath = __DIR__ . "/../views/layouts/admin.php";
         } else {
@@ -52,12 +61,14 @@ class Controller {
         }
     }
 
-    protected function json($data) {
+    protected function json($data, $statusCode = 200) {
+        http_response_code($statusCode);
         header('Content-Type: application/json');
-        echo json_encode($data);
-        exit();
+        echo json_encode($data, JSON_UNESCAPED_UNICODE);
+        exit;
     }
 
+    /* ===== Lấy tổng số lượng sản phẩm trong giỏ hàng của user (dùng để hiển thị badge) ===== */
     protected function getGlobalCartCount() {
         if (!isset($_SESSION['user']['id'])) {
             return 0;

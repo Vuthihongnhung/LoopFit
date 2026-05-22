@@ -1,23 +1,25 @@
 <?php 
-$pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
+$pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products';
+$baseUrl = BASE_URL ?? '/LoopFit/public';
+?>
 <style>
-/* ===== FORM THÊM & SỬA SẢN PHẨM ===== */
+/* ===== FORM THÊM & SỬA SẢN PHẨM - THU NHỎ ===== */
 .products-page {
-    max-width: 950px;
+    max-width: 800px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 10px;
 }
 
 .products-page .card {
     background: linear-gradient(145deg, #eef2ff 0%, #d9e6f5 100%);
-    border-radius: 32px;
+    border-radius: 24px;
     box-shadow: 0 25px 45px -12px rgba(37, 99, 235, 0.3);
     border: 1px solid rgba(37, 99, 235, 0.2);
     overflow: hidden;
 }
 
 .products-page .card-body {
-    padding: 45px 40px;
+    padding: 24px 28px;
     background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(2px);
 }
@@ -26,13 +28,13 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 35px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 12px;
 }
 
 .products-page .page-header h1 {
-    font-size: 36px;
+    font-size: 24px;
     font-weight: 800;
     background: linear-gradient(135deg, #0f2b6d, #1e40af, #2563eb);
     -webkit-background-clip: text;
@@ -46,11 +48,12 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
 .products-page .btn-secondary {
     background: linear-gradient(135deg, #1e40af, #2563eb);
     color: white;
-    padding: 10px 24px;
+    padding: 7px 18px;
     border-radius: 40px;
     border: none;
     text-decoration: none;
     font-weight: 600;
+    font-size: 13px;
     transition: all 0.3s;
     display: inline-flex;
     align-items: center;
@@ -65,32 +68,33 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
 }
 
 .products-page .form-group {
-    margin-bottom: 24px;
+    margin-bottom: 14px;
 }
 
 .products-page .form-row {
     display: flex;
-    gap: 20px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
 .products-page .form-row .form-group {
     flex: 1;
-    min-width: 150px;
+    min-width: 120px;
 }
 
 .products-page label {
     display: block;
     font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 8px;
+    font-size: 12px;
+    margin-bottom: 5px;
     color: #0f2b6d;
 }
 
 .products-page label i {
     color: #2563eb;
-    width: 20px;
-    margin-right: 8px;
+    width: 18px;
+    margin-right: 6px;
+    font-size: 12px;
 }
 
 .products-page input[type="text"],
@@ -98,10 +102,10 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
 .products-page select,
 .products-page textarea {
     width: 100%;
-    padding: 12px 16px;
+    padding: 7px 12px;
     border: 1.5px solid #cbd5e1;
-    border-radius: 20px;
-    font-size: 14px;
+    border-radius: 16px;
+    font-size: 13px;
     font-family: inherit;
     transition: all 0.3s ease;
     background: white;
@@ -118,18 +122,18 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
 .products-page .checkbox-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
-    padding: 8px 0;
+    gap: 8px;
+    padding: 4px 0;
 }
 
 .products-page .checkbox-group label {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-weight: 500;
-    font-size: 14px;
-    padding: 8px 18px;
-    border-radius: 40px;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 30px;
     cursor: pointer;
     transition: all 0.25s ease;
     background: white;
@@ -144,41 +148,53 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
 .products-page .checkbox-group label:has(input[value="Vàng"]) { color: #ca8a04; border-color: #fde047; }
 .products-page .checkbox-group label:has(input[value="Hồng"]) { color: #ec4899; border-color: #fbcfe8; }
 .products-page .checkbox-group label:has(input[value="Tím"]) { color: #8b5cf6; border-color: #c4b5fd; }
+.products-page .checkbox-group label:has(input[value="Xanh than"]) { color: #1e3a5f; border-color: #93c5fd; background: #eff6ff; }
+.products-page .checkbox-group label:has(input[value="Xanh lục"]) { color: #10b981; border-color: #a7f3d0; background: #ecfdf5; }
+.products-page .checkbox-group label:has(input[value="Nâu"]) { color: #78350f; border-color: #d4a574; background: #fef3c7; }
+.products-page .checkbox-group label:has(input[value="Xám"]) { color: #6b7280; border-color: #d1d5db; background: #f9fafb; }
+.products-page .checkbox-group label:has(input[value="Be"]) { color: #a8715a; border-color: #e5cdb5; background: #fdf8ed; }
+.products-page .checkbox-group label:has(input[value="Cam"]) { color: #ea580c; border-color: #fdba74; background: #fff7ed; }
 
-/* Thêm dấu chấm tròn màu bên cạnh chữ */
-.products-page .checkbox-group label:has(input[value="Trắng"])::before { content: "●"; color: #9ca3af; margin-right: 6px; font-size: 14px; }
-.products-page .checkbox-group label:has(input[value="Đen"])::before { content: "●"; color: #1f2937; margin-right: 6px; font-size: 14px; }
-.products-page .checkbox-group label:has(input[value="Đỏ"])::before { content: "●"; color: #ef4444; margin-right: 6px; font-size: 14px; }
-.products-page .checkbox-group label:has(input[value="Xanh"])::before { content: "●"; color: #3b82f6; margin-right: 6px; font-size: 14px; }
-.products-page .checkbox-group label:has(input[value="Vàng"])::before { content: "●"; color: #eab308; margin-right: 6px; font-size: 14px; }
-.products-page .checkbox-group label:has(input[value="Hồng"])::before { content: "●"; color: #ec4899; margin-right: 6px; font-size: 14px; }
-.products-page .checkbox-group label:has(input[value="Tím"])::before { content: "●"; color: #a855f7; margin-right: 6px; font-size: 14px; }
+.products-page .checkbox-group label:has(input[value="Trắng"])::before { content: "●"; color: #9ca3af; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Đen"])::before { content: "●"; color: #1f2937; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Đỏ"])::before { content: "●"; color: #ef4444; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Xanh"])::before { content: "●"; color: #3b82f6; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Vàng"])::before { content: "●"; color: #eab308; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Hồng"])::before { content: "●"; color: #ec4899; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Tím"])::before { content: "●"; color: #a855f7; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Xanh than"])::before { content: "●"; color: #1e3a5f; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Xanh lục"])::before { content: "●"; color: #10b981; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Nâu"])::before { content: "●"; color: #78350f; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Xám"])::before { content: "●"; color: #6b7280; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Be"])::before { content: "●"; color: #a8715a; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Cam"])::before { content: "●"; color: #ea580c; margin-right: 5px; font-size: 11px; }
 
 .products-page .checkbox-group label:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .products-page .checkbox-group input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     accent-color: #2563eb;
     cursor: pointer;
     margin: 0;
 }
 
 .products-page input[type="file"] {
-    padding: 10px 0;
+    padding: 6px 0;
     border: none;
 }
 
 .products-page input[type="file"]::file-selector-button {
-    padding: 8px 20px;
+    padding: 6px 16px;
     background: linear-gradient(135deg, #bfdbfe, #93c5fd);
     border: none;
-    border-radius: 40px;
+    border-radius: 30px;
     color: #1e3a8a;
     font-weight: 600;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.25s;
 }
@@ -190,9 +206,9 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
 
 .products-page .form-actions {
     display: flex;
-    gap: 16px;
-    margin-top: 32px;
-    padding-top: 24px;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
     border-top: 1px solid rgba(37, 99, 235, 0.2);
     justify-content: flex-end;
 }
@@ -200,30 +216,30 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
 .products-page .btn-primary {
     background: linear-gradient(135deg, #1e3a8a, #2563eb, #3b82f6);
     color: white;
-    padding: 12px 36px;
+    padding: 8px 24px;
     border-radius: 40px;
     border: none;
     font-weight: 700;
-    font-size: 15px;
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
 }
 
 .products-page .btn-primary:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(37, 99, 235, 0.45);
 }
 
 .products-page .btn-secondary {
     background: #f1f5f9;
     color: #475569;
-    padding: 12px 28px;
+    padding: 8px 20px;
     border-radius: 40px;
     border: 1px solid #e2e8f0;
     text-decoration: none;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     transition: all 0.25s;
     display: inline-flex;
     align-items: center;
@@ -231,21 +247,21 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
 }
 
 .products-page #currentImagePreview img {
-    border-radius: 16px;
+    border-radius: 12px;
     border: 2px solid #e2e8f0;
-    padding: 4px;
-    max-width: 100px;
-    margin-top: 10px;
+    padding: 3px;
+    max-width: 70px;
+    margin-top: 8px;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
     .products-page {
-        padding: 10px;
+        padding: 8px;
     }
     
     .products-page .card-body {
-        padding: 24px 18px;
+        padding: 16px;
     }
     
     .products-page .form-row {
@@ -259,12 +275,12 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
     }
     
     .products-page .page-header h1 {
-        font-size: 26px;
+        font-size: 20px;
     }
     
     .products-page .checkbox-group label {
-        padding: 5px 12px;
-        font-size: 12px;
+        padding: 4px 10px;
+        font-size: 11px;
     }
     
     .products-page .form-actions {
@@ -277,21 +293,11 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
         width: 100%;
     }
 }
-
-@media (min-width: 769px) and (max-width: 1024px) {
-    .products-page {
-        max-width: 95%;
-    }
-    
-    .products-page .card-body {
-        padding: 35px 30px;
-    }
-}
 </style>
 <div class="products-page">
     <div class="page-header">
         <h1>Thêm sản phẩm mới</h1>
-        <a href="<?php echo BASE_URL; ?>/index.php?url=admin/products" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        <a href="<?php echo $baseUrl; ?>/admin/products" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
     </div>
     <div class="card">
         <div class="card-body">
@@ -302,19 +308,23 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
                 </div>
                 
                 <div class="form-row">
-    <div class="form-group">
-        <label>Giá (VNĐ)</label>
-        <input type="number" name="price" required>
-    </div>
-    <div class="form-group">
-        <label>Giá cọc (VNĐ)</label>
-        <input type="number" name="deposit_price" required>
-    </div>
-    <div class="form-group">
-        <label>Tồn kho</label>
-        <input type="number" name="stock" required>
-    </div>
-</div>
+                    <div class="form-group">
+                        <label>Giá (VNĐ)</label>
+                        <input type="number" name="price" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Giảm giá (%)</label>
+                        <input type="number" name="discount_percent" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Giá cọc (VNĐ)</label>
+                        <input type="number" name="deposit_price" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tồn kho</label>
+                        <input type="number" name="stock" required>
+                    </div>
+                </div>
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -335,10 +345,13 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
                     <label>Nhóm danh mục</label>
                     <select id="parentCat" class="form-control" required>
                         <option value="">-- Chọn nhóm --</option>
-                        <option value="1">🔥 TRENDING</option>
-                        <option value="2">🆕 NEW</option>
-                        <option value="3">👕 SET OUTFIT</option>
-                        <option value="4">💰 SALE</option>
+                        <?php if (!empty($parentCategories)): ?>
+                            <?php foreach ($parentCategories as $cat): ?>
+                                <option value="<?= htmlspecialchars($cat['id']) ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="" disabled>Chưa có danh mục cha</option>
+                        <?php endif; ?>
                     </select>
                 </div>
 
@@ -350,7 +363,7 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
                 </div>
 
                 <div class="form-group">
-                    <label>Màu sắc (chọn nhiều)</label>
+                    <label>Màu sắc </label>
                     <div class="checkbox-group">
                         <label><input type="checkbox" name="colors[]" value="Trắng"> Trắng</label>
                         <label><input type="checkbox" name="colors[]" value="Đen"> Đen</label>
@@ -359,11 +372,17 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
                         <label><input type="checkbox" name="colors[]" value="Vàng"> Vàng</label>
                         <label><input type="checkbox" name="colors[]" value="Hồng"> Hồng</label>
                         <label><input type="checkbox" name="colors[]" value="Tím"> Tím</label>
+                        <label><input type="checkbox" name="colors[]" value="Xanh than"> Xanh than</label>
+                        <label><input type="checkbox" name="colors[]" value="Xanh lục"> Xanh lục</label>
+                        <label><input type="checkbox" name="colors[]" value="Nâu"> Nâu</label>
+                        <label><input type="checkbox" name="colors[]" value="Xám"> Xám</label>
+                        <label><input type="checkbox" name="colors[]" value="Be"> Be</label>
+                        <label><input type="checkbox" name="colors[]" value="Cam"> Cam</label>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Kích thước (chọn nhiều)</label>
+                    <label>Kích thước </label>
                     <div class="checkbox-group">
                         <label><input type="checkbox" name="sizes[]" value="S"> S</label>
                         <label><input type="checkbox" name="sizes[]" value="M"> M</label>
@@ -379,13 +398,14 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
                 </div>
                 
                 <div class="form-group">
-                    <label>Ảnh sản phẩm</label>
-                    <input type="file" name="image" accept="image/*">
+                    <label>Ảnh sản phẩm (có thể chọn nhiều)</label>
+                    <input type="file" name="images[]" multiple accept="image/*" class="form-control" required>
+                    <small class="text-muted">Giữ Ctrl (hoặc Cmd) để chọn nhiều ảnh</small>
                 </div>
                 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu</button>
-                    <a href="<?php echo BASE_URL; ?>/index.php?url=admin/products" class="btn btn-secondary">Hủy</a>
+                    <a href="<?php echo $baseUrl; ?>/admin/products" class="btn btn-secondary">Hủy</a>
                 </div>
             </form>
         </div>
@@ -393,58 +413,48 @@ $pageTitle = 'Thêm sản phẩm'; $activeMenu = 'products'; ?>
 </div>
 
 <script>
-const childMap = {
-    1: [
-        { id: 5, name: 'Street Style' },
-        { id: 6, name: 'Tối Giản' },
-        { id: 7, name: 'Y2K' },
-        { id: 8, name: 'Style Hàn' }
-    ],
-    2: [
-        { id: 9, name: 'Vừa Ra Mắt' },
-        { id: 10, name: 'Giới Hạn' }
-    ],
-    3: [
-        { id: 11, name: 'Năng Động' },
-        { id: 12, name: 'Thanh Lịch' },
-        { id: 13, name: 'Cá Tính' },
-        { id: 14, name: 'Quyến Rũ' },
-        { id: 15, name: 'Dễ Thương' }
-    ],
-    4: [
-        { id: 16, name: 'Combo Tiết Kiệm' },
-        { id: 17, name: 'Mã Giảm Giá' },
-        { id: 18, name: 'Ưu Đãi Khách Mới' }
-    ]
-};
-
+const BASE_URL = '<?= $baseUrl ?>';
 const parentSelect = document.getElementById('parentCat');
 const childSelect = document.getElementById('childCat');
 
-parentSelect.addEventListener('change', function() {
+parentSelect.addEventListener('change', async function() {
     const parentId = this.value;
     childSelect.innerHTML = '<option value="">-- Chọn danh mục --</option>';
-    
-    if (parentId && childMap[parentId]) {
-        childMap[parentId].forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.id;
-            option.textContent = item.name;
-            childSelect.appendChild(option);
-        });
+    if (!parentId) return;
+
+    try {
+        const response = await fetch(`${BASE_URL}/admin/api/categories?parent_id=${parentId}`);
+        const data = await response.json();
+        if (data.success && data.categories && data.categories.length) {
+            data.categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                childSelect.appendChild(option);
+            });
+        } else {
+            childSelect.innerHTML = '<option value="">Không có danh mục con</option>';
+        }
+    } catch (err) {
+        console.error('Lỗi tải danh mục:', err);
+        childSelect.innerHTML = '<option value="">Lỗi tải danh mục</option>';
     }
 });
 
 document.getElementById('createProductForm').onsubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const res = await fetch('http://localhost:8080/LoopFit/public/index.php?url=admin/products/store', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (data.success) {
-        alert('Thêm sản phẩm thành công');
-        window.location.href = 'http://localhost:8080/LoopFit/public/index.php?url=admin/products';
-    } else {
-        alert(data.error || 'Lỗi khi thêm');
+    try {
+        const res = await fetch(`${BASE_URL}/admin/products/store`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            alert('Thêm sản phẩm thành công');
+            window.location.href = `${BASE_URL}/admin/products`;
+        } else {
+            alert(data.error || 'Lỗi khi thêm');
+        }
+    } catch (err) {
+        alert('Lỗi kết nối: ' + err.message);
     }
 };
 </script>

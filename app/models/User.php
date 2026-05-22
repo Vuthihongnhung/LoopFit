@@ -6,6 +6,7 @@ use Core\Model;
 
 class User extends Model
 {
+    /* ===== Lấy danh sách tất cả người dùng ===== */
     public function getAll()
     {
         $sql = "SELECT id, name, email, phone, address, role, status, created_at 
@@ -25,6 +26,7 @@ class User extends Model
         return $users;
     }
 
+    /* ===== Lấy trạng thái (status) của user theo ID ===== */
     public function getStatusById($id)
     {
         $stmt = $this->conn->prepare("SELECT status FROM users WHERE id = ?");
@@ -35,6 +37,7 @@ class User extends Model
         return $result->fetch_assoc();
     }
 
+    /* ===== Cập nhật trạng thái của user (active / banned) ===== */
     public function updateStatus($id, $status)
     {
         $stmt = $this->conn->prepare("UPDATE users SET status = ? WHERE id = ?");
@@ -43,6 +46,7 @@ class User extends Model
         return $stmt->execute();
     }
 
+    /* ===== Đếm tổng số người dùng trong hệ thống ===== */
     public function countAll()
     {
         $result = $this->conn->query("SELECT COUNT(*) as total FROM users");
@@ -51,6 +55,7 @@ class User extends Model
         return $row['total'];
     }
 
+    /* ===== Lấy thông tin user theo email (bao gồm cả mật khẩu đã hash) ===== */
     public function getByEmail($email)
     {
         $stmt = $this->conn->prepare("SELECT * FROM users WHERE email = ?");
@@ -66,6 +71,7 @@ class User extends Model
         return $this->getByEmail($email);
     }
 
+    /* ===== Tạo người dùng mới ===== */
     public function create($data)
     {
         $name = $data['name'] ?? '';
@@ -94,6 +100,7 @@ class User extends Model
         return $this->conn->insert_id;
     }
 
+    /* ===== Cập nhật thông tin cá nhân (họ tên, số điện thoại, địa chỉ) của user ===== */
     public function updateProfile($id, $data)
     {
         $name = $data['name'] ?? '';
@@ -112,6 +119,7 @@ class User extends Model
         return $stmt->execute();
     }
 
+    /* ===== Lấy toàn bộ thông tin user theo ID (bao gồm password hash) ===== */
     public function getById($id)
     {
         $stmt = $this->conn->prepare("SELECT * FROM users WHERE id = ?");
@@ -122,12 +130,7 @@ class User extends Model
         return $result->fetch_assoc();
     }
 
-    /**
-     * Cập nhật mật khẩu mới cho user
-     * @param int $id
-     * @param string $hashedPassword Mật khẩu đã được hash
-     * @return bool
-     */
+    /* ===== Cập nhật mật khẩu mới cho user ===== */
     public function updatePassword($id, $hashedPassword)
     {
         $stmt = $this->conn->prepare("UPDATE users SET password = ? WHERE id = ?");

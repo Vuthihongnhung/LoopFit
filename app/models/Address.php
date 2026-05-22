@@ -1,72 +1,64 @@
 <?php
-
 namespace App\Models;
-
 use Core\Model;
 
-class Address extends Model
-{
-    protected $table = 'addresses';
+class Address extends Model {
+    public function __construct() {
+        parent::__construct(); 
+    }
 
-    // Sử dụng $conn từ Model (mysqli)
-    public function getByUser($userId)
-    {
-        $sql = "SELECT * FROM {$this->table} WHERE user_id = ? ORDER BY is_default DESC, id DESC";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param('i', $userId);
+    /* ===== Lấy danh sách địa chỉ của một người dùng ===== */
+    public function getByUser($userId) {
+        $stmt = $this->conn->prepare("SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, id DESC");
+        $stmt->bind_param("i", $userId);
         $stmt->execute();
         $result = $stmt->get_result();
         return $result->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function getByIdAndUser($id, $userId)
-    {
-        $sql = "SELECT * FROM {$this->table} WHERE id = ? AND user_id = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param('ii', $id, $userId);
+    /* ===== Lấy thông tin một địa chỉ theo ID ===== */
+    public function getById($id) {
+        $stmt = $this->conn->prepare("SELECT * FROM addresses WHERE id = ?");
+        $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
         return $result->fetch_assoc();
     }
 
-    public function create($data)
-    {
-        $sql = "INSERT INTO {$this->table} (user_id, full_name, phone, address_line, is_default) VALUES (?, ?, ?, ?, ?)";
+    /* ===== Thêm địa chỉ mới ===== */
+    public function create($data) {
+        $sql = "INSERT INTO addresses (user_id, full_name, phone, address_line, is_default) VALUES (?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param('isssi', $data['user_id'], $data['full_name'], $data['phone'], $data['address_line'], $data['is_default']);
+        $stmt->bind_param("isssi", $data['user_id'], $data['full_name'], $data['phone'], $data['address_line'], $data['is_default']);
         return $stmt->execute();
     }
 
-    public function update($id, $data)
-    {
-        $sql = "UPDATE {$this->table} SET full_name = ?, phone = ?, address_line = ?, is_default = ? WHERE id = ?";
+    /* ===== Cập nhật địa chỉ ===== */
+    public function update($id, $data) {
+        $sql = "UPDATE addresses SET full_name = ?, phone = ?, address_line = ?, is_default = ? WHERE id = ?";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param('sssii', $data['full_name'], $data['phone'], $data['address_line'], $data['is_default'], $id);
+        $stmt->bind_param("sssii", $data['full_name'], $data['phone'], $data['address_line'], $data['is_default'], $id);
         return $stmt->execute();
     }
 
-    public function delete($id)
-    {
-        $sql = "DELETE FROM {$this->table} WHERE id = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param('i', $id);
+    /* ===== Xóa địa chỉ ===== */
+    public function delete($id) {
+        $stmt = $this->conn->prepare("DELETE FROM addresses WHERE id = ?");
+        $stmt->bind_param("i", $id);
         return $stmt->execute();
     }
 
-    public function resetDefault($userId)
-    {
-        $sql = "UPDATE {$this->table} SET is_default = 0 WHERE user_id = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param('i', $userId);
+    /* ===== Reset tất cả địa chỉ của user về không mặc định ===== */
+    public function resetDefault($userId) {
+        $stmt = $this->conn->prepare("UPDATE addresses SET is_default = 0 WHERE user_id = ?");
+        $stmt->bind_param("i", $userId);
         return $stmt->execute();
     }
 
-    public function setDefault($userId, $addressId)
-    {
-        $this->resetDefault($userId);
-        $sql = "UPDATE {$this->table} SET is_default = 1 WHERE id = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param('i', $addressId);
+    /* ===== Đặt một địa chỉ cụ thể làm mặc định ===== */
+    public function setDefaultOnly($addressId) {
+        $stmt = $this->conn->prepare("UPDATE addresses SET is_default = 1 WHERE id = ?");
+        $stmt->bind_param("i", $addressId);
         return $stmt->execute();
     }
 }

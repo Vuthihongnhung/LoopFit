@@ -1,7 +1,7 @@
 <?php
 // Cấu hình chung cho ứng dụng
 
-// Đường dẫn gốc của dự án (thay đổi nếu cần)
+// Đường dẫn gốc của dự án 
 define('BASE_URL', 'http://localhost:8080/LoopFit/public');
 
 // Đường dẫn vật lý đến thư mục uploads
