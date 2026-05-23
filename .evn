@@ -1,1 +1,29 @@
+# ==========================================
+# LOOPFIT ENVIRONMENT CONFIGURATION
+# ==========================================
+
+# -------------------- APP --------------------
+APP_NAME="LoopFit"
+APP_ENV=local           # local, development, staging, production
+APP_DEBUG=true          # Hiển thị lỗi chi tiết khi true
+APP_URL="http://localhost:8080/LoopFit/public"
+BASE_URL="/LoopFit/public"
+
+# -------------------- DATABASE --------------------
+DB_HOST="localhost"
+DB_PORT=3306
+DB_NAME="loopfit_db"
+DB_USER="root"
+DB_PASS=""
+DB_CHARSET="utf8mb4"
+DB_COLLATION="utf8mb4_unicode_ci"
+
+# -------------------- DATABASE (MySQLi) --------------------
+DB_DRIVER="mysqli"
+
+# -------------------- UPLOAD --------------------
+UPLOAD_MAX_SIZE=5242880      # 5MB
+UPLOAD_ALLOWED_TYPES="image/jpeg,image/png,image/gif,image/webp"
+UPLOAD_PATH="uploads/"
+
 
