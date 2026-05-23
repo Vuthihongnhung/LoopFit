@@ -1,7 +1,3 @@
-<?php
-// views/user/profile.php
-// Dữ liệu: $user, $orders, $addresses (nếu có)
-?>
 <div class="profile-wrapper">
     <div class="profile-sidebar">
         <div class="user-avatar">
@@ -13,8 +9,7 @@
         </div>
         <ul class="profile-menu">
             <li class="menu-item active" data-tab="account">Thông tin tài khoản</li>
-            <li class="menu-item" data-tab="voucher">Mã ưu đãi</li>
-            <li class="menu-item" data-tab="orders">Đơn hàng</li>
+            <li class="menu-item" data-tab="vouchers">Mã ưu đãi</li>
             <li class="menu-item" data-tab="address">Sổ địa chỉ</li>
             <li class="menu-item" data-tab="logout">Đăng xuất</li>
         </ul>
@@ -75,48 +70,10 @@
         </div>
 
         <!-- TAB MÃ ƯU ĐÃI -->
-        <div class="tab-pane" id="tab-voucher">
+        <div class="tab-pane" id="tab-vouchers">
             <div class="profile-card">
                 <h3>Mã ưu đãi của bạn</h3>
-                <p>Hiện tại chưa có mã ưu đãi nào.</p>
-            </div>
-        </div>
-
-        <!-- TAB ĐƠN HÀNG -->
-        <div class="tab-pane" id="tab-orders">
-            <div class="profile-card">
-                <h3>Lịch sử đơn hàng</h3>
-                <?php if (empty($orders)): ?>
-                    <p>Bạn chưa có đơn hàng nào.</p>
-                <?php else: ?>
-                    <div class="orders-list">
-                        <?php foreach ($orders as $order): ?>
-                            <div class="order-item">
-                                <div class="order-header">
-                                    <span class="order-id">#<?= $order['id'] ?></span>
-                                    <span class="order-date"><?= date('d/m/Y', strtotime($order['created_at'])) ?></span>
-                                    <span class="order-status status-<?= strtolower($order['status']) ?>">
-                                        <?= ucfirst($order['status']) ?>
-                                    </span>
-                                </div>
-                                <div class="order-body">
-                                    <div><strong>Ngày thuê:</strong> <?= date('d/m/Y', strtotime($order['rent_date'])) ?></div>
-                                    <div><strong>Ngày trả dự kiến:</strong> <?= date('d/m/Y', strtotime($order['return_date'])) ?></div>
-                                    <?php if ($order['actual_return_date']): ?>
-                                        <div><strong>Ngày trả thực tế:</strong> <?= date('d/m/Y', strtotime($order['actual_return_date'])) ?></div>
-                                    <?php endif; ?>
-                                    <div><strong>Tổng tiền:</strong> <?= number_format($order['total_price'], 0, ',', '.') ?>đ</div>
-                                    <?php if ($order['late_fee'] > 0): ?>
-                                        <div><strong>Phí trễ:</strong> <?= number_format($order['late_fee'], 0, ',', '.') ?>đ</div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="order-footer">
-                                    <a href="/LoopFit/public/order/<?= $order['id'] ?>" class="order-detail-link">Xem chi tiết</a>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
+                <div id="vouchers-list" class="vouchers-list">Đang tải...</div>
             </div>
         </div>
 
@@ -125,12 +82,12 @@
             <div class="profile-card">
                 <h3>Sổ địa chỉ <button id="add-address-btn" class="btn-primary" style="float:right;">+ Thêm địa chỉ mới</button></h3>
                 <div id="address-list" class="address-list">
-                    <div class="loading">Đang tải...</div>
+                    <div>Đang tải...</div>
                 </div>
             </div>
         </div>
 
-        <!-- Modal thêm/sửa địa chỉ -->
+        <!-- Modal thêm/sửa địa chỉ giữ nguyên -->
         <div id="address-modal" class="modal">
             <div class="modal-content">
                 <span class="modal-close">&times;</span>
@@ -162,10 +119,9 @@
         <div class="tab-pane" id="tab-logout">
             <div class="profile-card">
                 <h3>Đăng xuất</h3>
-                <p>Bạn có chắc chắn muốn đăng xuất?</p>
+                <p>Bạn có chắc chắn muốn đăng xuất?</p><br>
                 <button id="confirm-logout" class="btn-primary">Đăng xuất ngay</button>
             </div>
         </div>
     </div>
 </div>
-
