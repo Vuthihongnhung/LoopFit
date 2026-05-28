@@ -72,6 +72,10 @@
                         </a>
                     </div>
                 </div>
+                 <!-- ===== CHAT HỖ TRỢ ===== -->
+                <a href="<?php echo BASE_URL; ?>/index.php?url=admin/chat" class="nav-item <?php echo ($activeMenu === 'chat') ? 'active' : ''; ?>">
+                    <i class="fas fa-comments"></i> <span>Chat hỗ trợ</span>
+                </a>
 
             </nav>
             <div class="sidebar-footer">
@@ -98,6 +102,9 @@
     </div>
     <script src="<?php echo BASE_URL; ?>/assets/admin/js/admin.js"></script>
     <script>
+    window.BASE_URL = '<?= BASE_URL ?>';
+</script>
+    <script>
         // Toggle menu cha-con
         document.querySelectorAll('.nav-group-header').forEach(header => {
             header.addEventListener('click', function(e) {
@@ -109,6 +116,7 @@
         document.getElementById('menuToggle')?.addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('open');
         });
-    </>
+    </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </body>
 </html>
