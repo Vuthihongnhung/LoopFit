@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\Address;
 use App\Models\Promotion;
 use App\Middlewares\AdminMiddleware;
+use Exception; 
+use App\Services\EmailService;
 
 class OrderController extends Controller
 {
@@ -114,58 +116,147 @@ class OrderController extends Controller
     public function updateStatus()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            return $this->json(['success' => false, 'error' => 'Method không hợp lệ']);
+
+            return $this->json([
+                'success' => false,
+                'error' => 'Method không hợp lệ'
+            ]);
         }
 
         $orderId = (int)($_POST['id'] ?? 0);
+
         $newStatus = $_POST['status'] ?? '';
-        $allowed = ['pending', 'confirmed', 'shipping', 'renting', 'returning', 'completed', 'cancelled'];
+
+        $allowed = [
+            'pending',
+            'confirmed',
+            'shipping',
+            'renting',
+            'returning',
+            'completed',
+            'cancelled'
+        ];
 
         if (!in_array($newStatus, $allowed)) {
-            return $this->json(['success' => false, 'error' => 'Trạng thái không hợp lệ']);
+
+            return $this->json([
+                'success' => false,
+                'error' => 'Trạng thái không hợp lệ'
+            ]);
         }
 
         $order = $this->orderModel->getById($orderId);
+
         if (!$order) {
-            return $this->json(['success' => false, 'error' => 'Đơn hàng không tồn tại']);
+
+            return $this->json([
+                'success' => false,
+                'error' => 'Đơn hàng không tồn tại'
+            ]);
         }
 
         $currentStatus = $order['status'];
+
         $result = false;
 
+        $emailService = new EmailService();
+
+        // XÁC NHẬN ĐƠN
         if ($newStatus == 'confirmed' && $currentStatus == 'pending') {
-            // Xác nhận đơn: trừ kho (tăng rented_quantity)
+
             $result = $this->orderModel->confirmOrder($orderId);
+
             if ($result !== true) {
-                return $this->json(['success' => false, 'error' => is_string($result) ? $result : 'Xác nhận thất bại']);
+
+                return $this->json([
+                    'success' => false,
+                    'error' => is_string($result)
+                        ? $result
+                        : 'Xác nhận thất bại'
+                ]);
             }
+
+            // Gửi mail xác nhận
+            $emailService->sendOrderConfirmed($order);
+
             $result = true;
-        } elseif ($newStatus == 'returning' && in_array($currentStatus, ['confirmed', 'renting'])) {
-            // Chỉ chuyển trạng thái sang "Đang hoàn trả", không tính phí trễ ở đây
-            $result = $this->orderModel->updateStatus($orderId, 'returning');
-            // Nếu muốn cập nhật actual_return_date, có thể set nhưng không bắt buộc
+        }
+
+        // ĐANG TRẢ HÀNG
+        elseif (
+            $newStatus == 'returning'
+            && in_array($currentStatus, ['confirmed', 'renting'])
+        ) {
+
+            $result = $this->orderModel->updateStatus(
+                $orderId,
+                'returning'
+            );
+
             if ($result && empty($order['actual_return_date'])) {
-                $this->orderModel->updateOrder($orderId, ['actual_return_date' => date('Y-m-d')]);
+
+                $this->orderModel->updateOrder(
+                    $orderId,
+                    [
+                        'actual_return_date' => date('Y-m-d')
+                    ]
+                );
             }
-        } elseif ($newStatus == 'completed' && $currentStatus == 'returning') {
-            // Hoàn tất đơn: giảm kho (rented_quantity), tính phí trễ, chuyển deposit_status
+        }
+
+        // HOÀN TẤT
+        elseif (
+            $newStatus == 'completed'
+            && $currentStatus == 'returning'
+        ) {
+
             $result = $this->orderModel->completeReturn($orderId);
-        } elseif ($newStatus == 'cancelled' && in_array($currentStatus, ['pending', 'confirmed'])) {
-            // Hủy đơn: nếu đã xác nhận thì hoàn trả rented_quantity
+
+            if ($result) {
+
+                // Gửi mail hoàn tất
+                $emailService->sendOrderCompleted($order);
+            }
+        }
+
+        // HỦY ĐƠN
+        elseif (
+            $newStatus == 'cancelled'
+            && in_array($currentStatus, ['pending', 'confirmed'])
+        ) {
+
             if ($currentStatus == 'confirmed') {
+
                 $this->orderModel->cancelConfirmedOrder($orderId);
             }
-            $result = $this->orderModel->updateStatus($orderId, 'cancelled');
-        } else {
-            // Các trạng thái khác (shipping, renting, ...) chỉ update status
-            $result = $this->orderModel->updateStatus($orderId, $newStatus);
+
+            $result = $this->orderModel->updateStatus(
+                $orderId,
+                'cancelled'
+            );
+        }
+
+        // CÁC STATUS KHÁC
+        else {
+
+            $result = $this->orderModel->updateStatus(
+                $orderId,
+                $newStatus
+            );
         }
 
         if ($result) {
-            return $this->json(['success' => true, 'message' => 'Cập nhật trạng thái thành công']);
-        } else {
-            return $this->json(['success' => false, 'error' => 'Cập nhật thất bại']);
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Cập nhật trạng thái thành công'
+            ]);
         }
+
+        return $this->json([
+            'success' => false,
+            'error' => 'Cập nhật thất bại'
+        ]);
     }
 
     /* ==================== XỬ LÝ TRẢ HÀNG CHI TIẾT SẢN PHẨM  ==================== */
@@ -469,19 +560,31 @@ class OrderController extends Controller
 
         $approved = 0;
         $skipped = 0;
+        $emailService = new \App\Services\EmailService();
+
         foreach ($orderIds as $id) {
             $order = $this->orderModel->getById($id);
             if ($order && in_array($order['status'], ['pending', 'waiting_confirm'])) {
                 $result = $this->orderModel->confirmOrder($id);
-                if ($result === true) $approved++;
-                else $skipped++;
+                if ($result === true) {
+                    $approved++;
+                    // Gửi email xác nhận
+                    try {
+                        $emailService->sendOrderConfirmed($order);
+                        error_log("Email confirmed sent for order #{$id}");
+                    } catch (\Exception $e) {
+                        error_log("Email error for order #{$id}: " . $e->getMessage());
+                    }
+                } else {
+                    $skipped++;
+                }
             } else {
                 $skipped++;
             }
         }
         return $this->json(['success' => true, 'approved' => $approved, 'skipped' => $skipped]);
     }
-
+    
     public function batchCancel()
     {
         $input = json_decode(file_get_contents('php://input'), true);

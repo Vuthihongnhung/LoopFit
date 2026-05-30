@@ -11,7 +11,14 @@ $router->get('/home', [App\Controllers\User\HomeController::class, 'index']);
 // Sản phẩm
 $router->get('/products', [App\Controllers\User\ProductController::class, 'index']);
 $router->get('/most-rented', [App\Controllers\User\ProductController::class, 'mostRented']);
+// Chi tiết sản phẩm (cả 2 dạng)
+$router->get('/product/{id}', [App\Controllers\User\ProductController::class, 'show']);
+$router->get('/san-pham/{id}', [App\Controllers\User\ProductController::class, 'show']); // thêm nếu cần
 
+// ... các route khác ...
+
+// Thông báo user (sửa lại)
+$router->get('/notifications', [App\Controllers\User\NotificationController::class, 'index']);
 // Chi tiết sản phẩm
 $router->get('/product/{id}', [App\Controllers\User\ProductController::class, 'show']);
 
@@ -30,6 +37,15 @@ $router->post('/login', [App\Controllers\User\AuthController::class, 'login']);
 $router->get('/register', [App\Controllers\User\AuthController::class, 'registerForm']);
 $router->post('/register', [App\Controllers\User\AuthController::class, 'register']);
 $router->get('/logout', [App\Controllers\User\AuthController::class, 'logout']);
+
+ // Chat (cho cả khách chưa đăng nhập)
+$router->get('/chat/get-messages', [App\Controllers\User\ChatController::class, 'getMessages']);
+$router->post('/chat/send', [App\Controllers\User\ChatController::class, 'sendMessage']);
+$router->post('/chat/bot-reply', [App\Controllers\User\ChatController::class, 'botReply']);
+$router->get('/chat/get-session', [App\Controllers\User\ChatController::class, 'getSession']);
+$router->get('/chat/search-faq', [App\Controllers\User\ChatController::class, 'searchFaq']);
+$router->get('/chat/get-stickers', [App\Controllers\User\ChatController::class, 'getStickers']);
+$router->get('/chat/get-user', [App\Controllers\User\ChatController::class, 'getUserInfo']);
 
 // ===== NHÓM ROUTE CẦN ĐĂNG NHẬP VÀ CHỈ DÀNH CHO USER (KHÔNG CHO ADMIN) =====
 $router->group(['middleware' => [UserMiddleware::class]], function($router) {
@@ -58,4 +74,6 @@ $router->group(['middleware' => [UserMiddleware::class]], function($router) {
     // Đánh giá sản phẩm sau khi đơn hàng hoàn tất
     $router->get('/review/order/{order_id}/product/{product_id}', [App\Controllers\User\ReviewController::class, 'showForm']);
     $router->post('/review/submit', [App\Controllers\User\ReviewController::class, 'submit']);
+// Trang danh sách thông báo
+$router->get('/notifications', [App\Controllers\User\NotificationController::class, 'index']);
 });

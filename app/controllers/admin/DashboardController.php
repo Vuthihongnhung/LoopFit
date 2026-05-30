@@ -132,4 +132,31 @@ class DashboardController extends Controller
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
+    public function getRevenueDaily()
+{
+    $orderModel = new \App\Models\Order();
+    $data = $orderModel->getRevenueDaily(7);
+    $this->json($data);
+}
+
+public function getRevenueMonthly()
+{
+    $orderModel = new \App\Models\Order();
+    $data = $orderModel->getRevenueMonthly(12);
+    $this->json($data);
+}
+
+public function getRevenueQuarterly()
+{
+    $orderModel = new \App\Models\Order();
+    $data = $orderModel->getRevenueQuarterly();
+    $this->json($data);
+}
+
+public function getRevenueYearly()
+{
+    $orderModel = new \App\Models\Order();
+    $data = $orderModel->getRevenueYearly(5);
+    $this->json($data);
+}
 }

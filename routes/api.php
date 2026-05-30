@@ -49,7 +49,26 @@ $router->group(['middleware' => [AuthMiddleware::class]], function ($router) {
     $router->get('/api/user/orders', [App\Controllers\User\OrderController::class, 'apiList']);
     $router->post('/api/user/orders/cancel', [App\Controllers\User\OrderController::class, 'apiCancel']);
     $router->post('/api/user/orders/return', [App\Controllers\User\OrderController::class, 'apiReturn']);
+    
+    // ========== API THÔNG BÁO (THÊM MỚI) ==========
+    $router->get('/api/notifications/unread-count', [App\Controllers\User\NotificationController::class, 'getUnreadCount']);
+    $router->get('/api/notifications/latest', [App\Controllers\User\NotificationController::class, 'getLatest']);
+    $router->post('/api/notifications/mark-read', [App\Controllers\User\NotificationController::class, 'markAsRead']);
+    $router->post('/api/notifications/mark-all-read', [App\Controllers\User\NotificationController::class, 'markAllAsRead']);
+    $router->post('/api/notifications/delete', [App\Controllers\User\NotificationController::class, 'delete']);
 });
 
+// Các route không cần auth (nếu có)
 $router->post('/checkout/apply-voucher', [App\Controllers\User\CheckoutController::class, 'applyVoucher']);
 $router->post('/checkout/process', [App\Controllers\User\CheckoutController::class, 'process']);
+// === API thống kê doanh thu (cho admin) ===
+// API doanh thu chi tiết
+$router->get('/admin/api/revenue/daily', [App\Controllers\Admin\DashboardController::class, 'getRevenueDaily']);
+$router->get('/admin/api/revenue/monthly', [App\Controllers\Admin\DashboardController::class, 'getRevenueMonthly']);
+$router->get('/admin/api/revenue/quarterly', [App\Controllers\Admin\DashboardController::class, 'getRevenueQuarterly']);
+$router->get('/admin/api/revenue/yearly', [App\Controllers\Admin\DashboardController::class, 'getRevenueYearly']);
+$router->get('/admin/api/notifications/unread-count', [App\Controllers\Admin\NotificationController::class, 'getUnreadCount']);
+$router->get('/admin/api/notifications/latest', [App\Controllers\Admin\NotificationController::class, 'getLatest']);
+$router->post('/admin/api/notifications/mark-read', [App\Controllers\Admin\NotificationController::class, 'markAsRead']);
+$router->post('/admin/api/notifications/mark-all-read', [App\Controllers\Admin\NotificationController::class, 'markAllAsRead']);
+$router->post('/admin/api/notifications/delete', [App\Controllers\Admin\NotificationController::class, 'delete']);

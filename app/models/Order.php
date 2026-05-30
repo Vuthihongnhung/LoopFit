@@ -579,4 +579,136 @@ class Order extends Model
     public function getLastError() {
         return $this->conn ? $this->conn->error : 'Không có kết nối database';
     }
+    public function getRevenueDaily($days = 7)
+{
+    $sql = "SELECT DATE(created_at) as date, SUM(final_total) as revenue
+            FROM orders 
+            WHERE status = 'completed' AND payment_status = 'paid'
+              AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param('i', $days);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+
+    $labels = [];
+    $values = [];
+    $date = new \DateTime();
+    $interval = new \DateInterval('P1D');
+    for ($i = $days - 1; $i >= 0; $i--) {
+        $d = (clone $date)->modify("-$i days");
+        $label = $d->format('Y-m-d');
+        $labels[] = $label;
+        $found = false;
+        foreach ($rows as $row) {
+            if ($row['date'] == $label) {
+                $values[] = (float)$row['revenue'];
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) $values[] = 0;
+    }
+    return [
+        'labels' => $labels,
+        'datasets' => [[
+            'label' => 'Doanh thu (VNĐ)',
+            'data' => $values,
+            'backgroundColor' => 'rgba(54, 162, 235, 0.5)',
+            'borderColor' => 'rgba(54, 162, 235, 1)',
+            'borderWidth' => 1
+        ]]
+    ];
+}
+
+public function getRevenueMonthly($months = 12)
+{
+    $sql = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, SUM(final_total) as revenue
+            FROM orders
+            WHERE status = 'completed' AND payment_status = 'paid'
+              AND created_at >= DATE_SUB(NOW(), INTERVAL ? MONTH)
+            GROUP BY month
+            ORDER BY month ASC";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param('i', $months);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+
+    $labels = [];
+    $values = [];
+    $current = new \DateTime();
+    $current->modify('first day of this month');
+    for ($i = $months - 1; $i >= 0; $i--) {
+        $d = (clone $current)->modify("-$i months");
+        $label = $d->format('Y-m');
+        $labels[] = $label;
+        $found = false;
+        foreach ($rows as $row) {
+            if ($row['month'] == $label) {
+                $values[] = (float)$row['revenue'];
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) $values[] = 0;
+    }
+    return [
+        'labels' => $labels,
+        'datasets' => [[
+            'label' => 'Doanh thu (VNĐ)',
+            'data' => $values,
+            'backgroundColor' => 'rgba(255, 99, 132, 0.5)',
+            'borderColor' => 'rgba(255, 99, 132, 1)'
+        ]]
+    ];
+}
+
+public function getRevenueQuarterly()
+{
+    $sql = "SELECT CONCAT(YEAR(created_at), '-Q', QUARTER(created_at)) as quarter, SUM(final_total) as revenue
+            FROM orders
+            WHERE status = 'completed' AND payment_status = 'paid'
+            GROUP BY quarter
+            ORDER BY quarter ASC";
+    $result = $this->conn->query($sql);
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+    $labels = array_column($rows, 'quarter');
+    $values = array_map('floatval', array_column($rows, 'revenue'));
+    return [
+        'labels' => $labels,
+        'datasets' => [[
+            'label' => 'Doanh thu (VNĐ)',
+            'data' => $values,
+            'backgroundColor' => 'rgba(75, 192, 192, 0.5)'
+        ]]
+    ];
+}
+
+public function getRevenueYearly($years = 5)
+{
+    $sql = "SELECT YEAR(created_at) as year, SUM(final_total) as revenue
+            FROM orders
+            WHERE status = 'completed' AND payment_status = 'paid'
+              AND created_at >= DATE_SUB(NOW(), INTERVAL ? YEAR)
+            GROUP BY year
+            ORDER BY year ASC";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param('i', $years);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+    $labels = array_column($rows, 'year');
+    $values = array_map('floatval', array_column($rows, 'revenue'));
+    return [
+        'labels' => $labels,
+        'datasets' => [[
+            'label' => 'Doanh thu (VNĐ)',
+            'data' => $values,
+            'backgroundColor' => 'rgba(153, 102, 255, 0.5)'
+        ]]
+    ];
+}
 }
