@@ -14,15 +14,27 @@ class Order extends Model
     // ==================== CREATE ====================
 
     /* ===== Tạo mới một đơn hàng  ===== */
+    private function getNextId() {
+        $sql = "SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM orders";
+        $result = $this->conn->query($sql);
+        if ($result) {
+            $row = $result->fetch_assoc();
+            return (int)($row['next_id'] ?? 1);
+        }
+        return 1;
+    }
+
     public function create($data) {
+        $nextId = $this->getNextId();
         $sql = "INSERT INTO orders 
-                (user_id, address_id, rent_date, return_date, total_price, discount_price, shipping_fee, deposit_amount, final_total, payment_method, notes, status, payment_status, deposit_status, payment_expiry, promotion_id, late_fee, late_fee_status, late_fee_paid_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                (id, user_id, address_id, rent_date, return_date, total_price, discount_price, shipping_fee, deposit_amount, final_total, payment_method, notes, status, payment_status, deposit_status, payment_expiry, promotion_id, late_fee, late_fee_status, late_fee_paid_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) return ['success' => false, 'message' => 'Prepare lỗi: ' . $this->conn->error];
 
         $stmt->bind_param(
-            "iissddddsssssssiisi",
+            "iiissdddddssssssidss",
+            $nextId,
             $data['user_id'],
             $data['address_id'],
             $data['rent_date'],
@@ -45,9 +57,8 @@ class Order extends Model
         );
 
         if ($stmt->execute()) {
-            $id = $this->conn->insert_id;
             $stmt->close();
-            return ['success' => true, 'id' => $id];
+            return ['success' => true, 'id' => $nextId];
         } else {
             $error = $stmt->error;
             $stmt->close();
@@ -399,9 +410,14 @@ class Order extends Model
                 }
             }
 
-            // Cập nhật tồn kho: tăng rented_quantity
+            // Cập nhật tồn kho: tăng rented_quantity cho biến thể tương ứng
             foreach ($items as $item) {
-                $productModel->increaseRentedQuantity($item['product_id'], $item['quantity']);
+                $productModel->increaseVariantRentedQuantity(
+                    $item['product_id'],
+                    $item['color'] ?? '',
+                    $item['size'] ?? '',
+                    $item['quantity']
+                );
             }
 
             // Cập nhật trạng thái đơn hàng
@@ -442,9 +458,14 @@ class Order extends Model
             $productModel = new Product();
 
             if (!$isDamaged) {
-                // Hàng trả bình thường: giảm rented_quantity (trả lại kho)
+                // Hàng trả bình thường: giảm rented_quantity cho biến thể tương ứng
                 foreach ($items as $item) {
-                    $productModel->decreaseRentedQuantity($item['product_id'], $item['quantity']);
+                    $productModel->decreaseVariantRentedQuantity(
+                        $item['product_id'],
+                        $item['color'] ?? '',
+                        $item['size'] ?? '',
+                        $item['quantity']
+                    );
                 }
             } else {
                 // Hàng hư hỏng: không trả lại kho
@@ -488,7 +509,7 @@ class Order extends Model
         $productModel = new \App\Models\Product();
         $this->conn->begin_transaction();
         try {
-            $actualReturnDate = date('Y-m-d');
+            $actualReturnDate = $order['actual_return_date'] ?? date('Y-m-d');
             $sql = "UPDATE orders SET status = 'completed', actual_return_date = ? WHERE id = ?";
             $stmt = $this->conn->prepare($sql);
             $stmt->bind_param('si', $actualReturnDate, $orderId);
@@ -497,10 +518,21 @@ class Order extends Model
             // Chuyển deposit_status sang 'pending_return' để admin có thể hoàn cọc
             $this->updateDepositStatus($orderId, 'pending_return');
 
-            // Tăng rented_count (tổng lượt thuê) và giảm rented_quantity (số đang thuê) cho từng sản phẩm
+            // Tăng rented_count (tổng lượt thuê) cho từng sản phẩm
             foreach ($items as $item) {
                 $productModel->increaseRentedCount($item['product_id'], $item['quantity']);
-                $productModel->decreaseRentedQuantity($item['product_id'], $item['quantity']);
+            }
+
+            // Nếu admin chưa cập nhật actual_return_date trước đó, giảm rented_quantity bây giờ
+            if (empty($order['actual_return_date'])) {
+                foreach ($items as $item) {
+                    $productModel->decreaseVariantRentedQuantity(
+                        $item['product_id'],
+                        $item['color'] ?? '',
+                        $item['size'] ?? '',
+                        $item['quantity']
+                    );
+                }
             }
 
             $this->conn->commit();
@@ -549,7 +581,12 @@ class Order extends Model
         $this->conn->begin_transaction();
         try {
             foreach ($items as $item) {
-                $productModel->decreaseRentedQuantity($item['product_id'], $item['quantity']);
+                $productModel->decreaseVariantRentedQuantity(
+                    $item['product_id'],
+                    $item['color'] ?? '',
+                    $item['size'] ?? '',
+                    $item['quantity']
+                );
             }
             $sql = "UPDATE orders SET status = 'cancelled' WHERE id = ?";
             $stmt = $this->conn->prepare($sql);

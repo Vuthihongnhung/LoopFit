@@ -27,6 +27,8 @@ $(document).ready(function() {
     let currentIndex = 0;
     let images = [];
     const mainImg = document.getElementById('mainImg');
+    // variant map từ template: { size: { color: available, ... }, ... }
+    const variantMap = container && container.dataset && container.dataset.variants ? JSON.parse(container.dataset.variants) : {};
     const rentDateInput = document.getElementById('rentDate');
     const returnDateInput = document.getElementById('returnDate');
     const qtyInput = document.getElementById('qty');
@@ -87,7 +89,8 @@ $(document).ready(function() {
                 </span>
             `);
             $(stockExtraInfo).text('');
-            $(addToCartBtn).prop('disabled', true);
+            // Cho phép người dùng bấm nút để hiển thị thông báo nếu thông tin chưa đầy đủ
+            if (addToCartBtn) $(addToCartBtn).prop('disabled', false);
             return;
         }
         if (available < 1) {
@@ -138,7 +141,7 @@ $(document).ready(function() {
             return;
         }
 
-        fetch(`${BASE_URL}/check-stock?product_id=${productId}&rent_date=${rentDate}&return_date=${returnDate}&quantity=${quantity}`)
+        fetch(`${BASE_URL}/check-stock?product_id=${productId}&rent_date=${rentDate}&return_date=${returnDate}&quantity=${quantity}&size=${encodeURIComponent(size)}&color=${encodeURIComponent(color)}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -159,9 +162,14 @@ $(document).ready(function() {
     $(document).on('click', '.size-btn', function() {
         $('.size-btn').removeClass('active');
         $(this).addClass('active');
+        // Khi chọn size, cập nhật trạng thái màu tương ứng
+        const selectedSize = $(this).data('size');
+        updateColorAvailability(selectedSize);
         checkStock();
     });
     $(document).on('click', '.color-btn', function() {
+        // không cho chọn nếu đang disabled
+        if ($(this).prop('disabled')) return;
         $('.color-btn').removeClass('active');
         $(this).addClass('active');
         checkStock();
@@ -254,6 +262,31 @@ $(document).ready(function() {
     if (addToCartBtn) {
         $(addToCartBtn).off('click').on('click', addToCartHandler);
     }
+
+    // Cập nhật khả năng chọn màu theo size
+    function updateColorAvailability(size) {
+        if (!size) {
+            $('.color-btn').each(function() { $(this).prop('disabled', false).removeClass('disabled'); });
+            return;
+        }
+        $('.color-btn').each(function() {
+            const color = $(this).data('color');
+            const avail = variantMap[size] && typeof variantMap[size][color] !== 'undefined' ? parseInt(variantMap[size][color]) : 0;
+            if (avail > 0) {
+                $(this).prop('disabled', false).removeClass('disabled');
+            } else {
+                // nếu đang active thì bỏ chọn
+                if ($(this).hasClass('active')) $(this).removeClass('active');
+                $(this).prop('disabled', true).addClass('disabled');
+            }
+        });
+    }
+
+    // Khởi tạo trạng thái màu khi load trang nếu cần
+    (function initVariantUI(){
+        const activeSize = $('.size-btn.active').data('size');
+        if (activeSize) updateColorAvailability(activeSize);
+    })();
 
     // ========== 6. ĐÁNH GIÁ (REVIEW) ==========
     $('.rating-input i').on('click', function() {

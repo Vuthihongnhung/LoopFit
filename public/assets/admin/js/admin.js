@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = document.querySelector('#productsTable tbody');
         if (!tbody) return;
         if (!products.length) {
-            tbody.innerHTML = '<tr><td colspan="16" class="text-center">📦 Không có sản phẩm nào</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="15" class="text-center">📦 Không có sản phẩm nào</td></tr>';
             return;
         }
         
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const discount = p.discount_percent || 0;
             const depositPrice = Number(p.deposit_price || 0);
             const stock = Number(p.stock || 0);
-            const rentedQuantity = Number(p.rented_quantity || 0);
+            const rentedQuantity = Number((p.current_rented ?? p.rented_quantity) || 0);
             const available = stock - rentedQuantity;
             
             // Trạng thái
@@ -96,8 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const categoryName = p.category_name || 'Chưa phân loại';
             const gender = p.gender === 'male' ? 'Nam' : (p.gender === 'female' ? 'Nữ' : 'Unisex');
-            const colors = p.colors || '-';
-            const sizes = p.sizes || '-';
             const rentedCount = Number(p.rented_count || 0);
             
             let imageUrl = p.image_url || p.image || '';
@@ -117,8 +115,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td class="${statusClass}">${statusText} ${available > 0 ? `<span class="stock-badge">(còn ${available})</span>` : (rentedQuantity > 0 ? `<span class="rented-badge">(${rentedQuantity} đang thuê)</span>` : '')}</td>
                 <td>${escapeHtml(categoryName)}</td>
                 <td>${gender}</td>
-                <td>${escapeHtml(colors)}</td>
-                <td>${escapeHtml(sizes)}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-info view-stock-details" data-id="${id}" title="Chi tiết kho">
+                        👁 Chi tiết kho
+                    </button>
+                </td>
                 <td>${rentedCount}</td>
                 <td class="actions">
                     <a href="${BASE_URL}/admin/products/edit?id=${id}" class="btn-icon edit" title="Sửa"><i class="fas fa-edit"></i></a>
@@ -136,6 +137,72 @@ document.addEventListener('DOMContentLoaded', function() {
                 deleteProduct(productId);
             };
         });
+
+        // Gắn sự kiện xem chi tiết kho
+        document.querySelectorAll('#productsTable .view-stock-details').forEach(btn => {
+            btn.onclick = async (e) => {
+                e.preventDefault();
+                await loadInventoryDetails(btn.getAttribute('data-id'));
+            };
+        });
+    }
+
+    async function loadInventoryDetails(productId) {
+        const inventoryModal = document.getElementById('inventoryModal');
+        const inventoryTableBody = document.querySelector('#inventoryDetailTable tbody');
+        const inventoryTotal = document.getElementById('inventoryTotal');
+        const inventoryProductName = document.getElementById('inventoryProductName');
+        if (!inventoryModal || !inventoryTableBody || !inventoryTotal || !inventoryProductName) return;
+
+        try {
+            const res = await fetch(`${BASE_URL}/index.php?url=admin/api/product&id=${productId}`);
+            const data = await res.json();
+            if (!data.success) {
+                showToast(data.error || 'Lỗi khi tải chi tiết kho', 'error');
+                return;
+            }
+
+            const product = data.data;
+            inventoryProductName.textContent = `Sản phẩm: ${product.name || ''}`;
+            inventoryTableBody.innerHTML = '';
+            let total = 0;
+
+            if (product.variants && product.variants.length) {
+                product.variants.forEach(variant => {
+                    const stock = Number(variant.stock || 0);
+                    const rentedQuantity = Number(variant.rented_quantity || 0);
+                    const available = stock - rentedQuantity;
+                    const statusClass = available <= 0 ? 'status-outstock' : (available < 2 ? 'status-rented' : 'status-instock');
+                    const status = available <= 0 ? '❌ Hết hàng' : (available < 2 ? '⚠️ Sắp hết hàng' : '✅ Còn hàng');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${variant.color}</td>
+                        <td>${variant.size}</td>
+                        <td>${stock}</td>
+                        <td>${rentedQuantity}</td>
+                        <td>${available}</td>
+                        <td class="${statusClass}">${status}</td>
+                    `;
+                    inventoryTableBody.appendChild(row);
+                    total += stock;
+                });
+            } else {
+                const rentedQuantity = Number(product.rented_quantity || 0);
+                const available = Number(product.stock || 0) - rentedQuantity;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="6" style="text-align:center;color:#6b7280;">Chưa có biến thể. Tổng tồn kho hiện tại: ${product.stock}, đang thuê: ${rentedQuantity}, còn lại: ${available}</td>
+                `;
+                inventoryTableBody.appendChild(row);
+                total = Number(product.stock || 0);
+            }
+
+            inventoryTotal.textContent = `Tổng tồn kho: ${total}`;
+            inventoryModal.style.display = 'flex';
+        } catch (err) {
+            console.error(err);
+            showToast('Lỗi khi tải chi tiết kho', 'error');
+        }
     }
     
     function escapeHtml(str) {

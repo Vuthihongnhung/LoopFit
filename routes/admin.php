@@ -88,4 +88,12 @@ $router->group(['middleware' => [App\Middlewares\AdminMiddleware::class]], funct
     $router->get('/admin/payments', [App\Controllers\Admin\PaymentController::class, 'index']);
     $router->get('/admin/api/payments', [App\Controllers\Admin\PaymentController::class, 'apiGetList']);
     $router->post('/admin/payments/confirm', [App\Controllers\Admin\PaymentController::class, 'confirmPayment']);
+
+    // Chat
+    $router->get('/admin/chat', [\App\Controllers\Admin\AdminChatController::class, 'index']);
+    $router->get('/admin/chat/session-messages', [\App\Controllers\Admin\AdminChatController::class, 'getSessionMessages']);
+    $router->post('/admin/chat/send', [\App\Controllers\Admin\AdminChatController::class, 'sendMessage']);
+    $router->get('/admin/chat/unread-counts', [\App\Controllers\Admin\AdminChatController::class, 'getUnreadCounts']);
+    $router->post('/admin/chat/reset', [App\Controllers\Admin\AdminChatController::class, 'resetChat']);
+    $router->post('/admin/chat/delete-session', [App\Controllers\Admin\AdminChatController::class, 'deleteSession']);
 });

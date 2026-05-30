@@ -7,22 +7,33 @@ use Core\Model;
 class OrderItem extends Model
 {
     /* ===== Tạo chi tiết đơn hàng ===== */
+    private function getNextId() {
+        $sql = "SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM order_details";
+        $result = $this->conn->query($sql);
+        if ($result) {
+            $row = $result->fetch_assoc();
+            return (int)($row['next_id'] ?? 1);
+        }
+        return 1;
+    }
+
     public function create($data)
     {
-        $order_id        = $data['order_id'] ?? 0;
-        $product_id      = $data['product_id'] ?? 0;
-        $quantity        = $data['quantity'] ?? 1;
-        $price           = $data['price'] ?? ($data['price_per_day'] ?? 0);
+        $order_id         = $data['order_id'] ?? 0;
+        $product_id       = $data['product_id'] ?? 0;
+        $quantity         = $data['quantity'] ?? 1;
+        $price            = $data['price'] ?? ($data['price_per_day'] ?? 0);
         $deposit_per_item = $data['deposit_per_item'] ?? ($data['deposit_price'] ?? 0);
-        $color           = $data['color'] ?? '';
-        $size            = $data['size'] ?? '';
-        $rental_start    = $data['rental_start'] ?? ($data['rent_date'] ?? null);
-        $rental_end      = $data['rental_end'] ?? ($data['return_date'] ?? null);
-        $subtotal        = $data['subtotal'] ?? 0;
+        $color            = $data['color'] ?? '';
+        $size             = $data['size'] ?? '';
+        $rental_start     = $data['rental_start'] ?? ($data['rent_date'] ?? null);
+        $rental_end       = $data['rental_end'] ?? ($data['return_date'] ?? null);
+        $subtotal         = $data['subtotal'] ?? 0;
+        $nextId           = $this->getNextId();
 
         $sql = "INSERT INTO order_details 
-                (order_id, product_id, quantity, price, deposit_per_item, color, size, rental_start, rental_end, subtotal) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                (id, order_id, product_id, quantity, price, deposit_per_item, color, size, rental_start, rental_end, subtotal) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) {
             error_log("OrderItem create prepare failed: " . $this->conn->error);
@@ -30,7 +41,8 @@ class OrderItem extends Model
         }
 
         $stmt->bind_param(
-            'iiiddssssd',
+            'iiiiddssssd',
+            $nextId,
             $order_id,
             $product_id,
             $quantity,

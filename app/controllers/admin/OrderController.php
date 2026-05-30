@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\Address;
 use App\Models\Promotion;
 use App\Middlewares\AdminMiddleware;
+use Exception; 
+use App\Services\EmailService;
 
 class OrderController extends Controller
 {
@@ -114,58 +116,148 @@ class OrderController extends Controller
     public function updateStatus()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            return $this->json(['success' => false, 'error' => 'Method không hợp lệ']);
+
+            return $this->json([
+                'success' => false,
+                'error' => 'Method không hợp lệ'
+            ]);
         }
 
         $orderId = (int)($_POST['id'] ?? 0);
+
         $newStatus = $_POST['status'] ?? '';
-        $allowed = ['pending', 'confirmed', 'shipping', 'renting', 'returning', 'completed', 'cancelled'];
+
+        $allowed = [
+            'pending',
+            'confirmed',
+            'shipping',
+            'renting',
+            'returning',
+            'completed',
+            'cancelled'
+        ];
 
         if (!in_array($newStatus, $allowed)) {
-            return $this->json(['success' => false, 'error' => 'Trạng thái không hợp lệ']);
+
+            return $this->json([
+                'success' => false,
+                'error' => 'Trạng thái không hợp lệ'
+            ]);
         }
 
         $order = $this->orderModel->getById($orderId);
+
         if (!$order) {
-            return $this->json(['success' => false, 'error' => 'Đơn hàng không tồn tại']);
+
+            return $this->json([
+                'success' => false,
+                'error' => 'Đơn hàng không tồn tại'
+            ]);
         }
 
         $currentStatus = $order['status'];
+
         $result = false;
 
+        $emailService = new EmailService();
+
+        // XÁC NHẬN ĐƠN
         if ($newStatus == 'confirmed' && $currentStatus == 'pending') {
-            // Xác nhận đơn: trừ kho (tăng rented_quantity)
+
             $result = $this->orderModel->confirmOrder($orderId);
+
             if ($result !== true) {
-                return $this->json(['success' => false, 'error' => is_string($result) ? $result : 'Xác nhận thất bại']);
+
+                return $this->json([
+                    'success' => false,
+                    'error' => is_string($result)
+                        ? $result
+                        : 'Xác nhận thất bại'
+                ]);
             }
+
+            // Gửi mail xác nhận
+            $emailService->sendOrderConfirmed($order);
+
             $result = true;
-        } elseif ($newStatus == 'returning' && in_array($currentStatus, ['confirmed', 'renting'])) {
-            // Chỉ chuyển trạng thái sang "Đang hoàn trả", không tính phí trễ ở đây
-            $result = $this->orderModel->updateStatus($orderId, 'returning');
-            // Nếu muốn cập nhật actual_return_date, có thể set nhưng không bắt buộc
-            if ($result && empty($order['actual_return_date'])) {
-                $this->orderModel->updateOrder($orderId, ['actual_return_date' => date('Y-m-d')]);
+        }
+
+        // HOÀN TẤT
+        elseif ($newStatus == 'completed' && $currentStatus == 'returning') {
+            // Xác định ngày trả thực tế (nếu chưa có thì dùng hôm nay)
+            $actualReturnDate = $order['actual_return_date'] ?? date('Y-m-d');
+            // Tính phí trễ nếu cần
+            $lateFee = $order['late_fee'];
+            $lateFeeStatus = $order['late_fee_status'] ?? 'paid';
+
+            if ($order['late_fee_status'] !== 'paid') {
+                $latestComputedFee = $this->calculateLateFee($order['return_date'], $actualReturnDate);
+                $lateFee = $latestComputedFee;
+                $lateFeeStatus = $lateFee > 0 ? 'unpaid' : 'paid';
             }
-        } elseif ($newStatus == 'completed' && $currentStatus == 'returning') {
-            // Hoàn tất đơn: giảm kho (rented_quantity), tính phí trễ, chuyển deposit_status
+
+            // Cập nhật actual_return_date và late_fee nếu cần
+            if (empty($order['actual_return_date'])) {
+                $updateData = [
+                    'actual_return_date' => $actualReturnDate
+                ];
+                if ($order['late_fee_status'] !== 'paid') {
+                    $updateData['late_fee'] = $lateFee;
+                    $updateData['late_fee_status'] = $lateFeeStatus;
+                }
+                $this->orderModel->updateOrder($orderId, $updateData);
+            } elseif ($order['late_fee_status'] !== 'paid' && $order['late_fee'] != $lateFee) {
+                $this->orderModel->updateOrder($orderId, [
+                    'late_fee' => $lateFee,
+                    'late_fee_status' => $lateFeeStatus
+                ]);
+            }
+
+            // Gọi completeReturn (cập nhật kho, status = completed, ...)
             $result = $this->orderModel->completeReturn($orderId);
-        } elseif ($newStatus == 'cancelled' && in_array($currentStatus, ['pending', 'confirmed'])) {
-            // Hủy đơn: nếu đã xác nhận thì hoàn trả rented_quantity
+
+            if ($result) {
+                $emailService->sendOrderCompleted($order);
+            }
+        }
+        // HỦY ĐƠN
+        elseif (
+            $newStatus == 'cancelled'
+            && in_array($currentStatus, ['pending', 'confirmed'])
+        ) {
+
             if ($currentStatus == 'confirmed') {
+
                 $this->orderModel->cancelConfirmedOrder($orderId);
             }
-            $result = $this->orderModel->updateStatus($orderId, 'cancelled');
-        } else {
-            // Các trạng thái khác (shipping, renting, ...) chỉ update status
-            $result = $this->orderModel->updateStatus($orderId, $newStatus);
+
+            $result = $this->orderModel->updateStatus(
+                $orderId,
+                'cancelled'
+            );
+        }
+
+        // CÁC STATUS KHÁC
+        else {
+
+            $result = $this->orderModel->updateStatus(
+                $orderId,
+                $newStatus
+            );
         }
 
         if ($result) {
-            return $this->json(['success' => true, 'message' => 'Cập nhật trạng thái thành công']);
-        } else {
-            return $this->json(['success' => false, 'error' => 'Cập nhật thất bại']);
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Cập nhật trạng thái thành công'
+            ]);
         }
+
+        return $this->json([
+            'success' => false,
+            'error' => 'Cập nhật thất bại'
+        ]);
     }
 
     /* ==================== XỬ LÝ TRẢ HÀNG CHI TIẾT SẢN PHẨM  ==================== */
@@ -190,17 +282,28 @@ class OrderController extends Controller
             // Chỉ cập nhật tình trạng sản phẩm
             $this->orderItemModel->updateReturnStatus($detailId, $condition);
 
-            if ($lateDays > 0) {
-                $lateFee = $lateDays * 50000;
-                $stmt = $conn->prepare("UPDATE orders SET late_fee = late_fee + ?, late_fee_status = 'unpaid' WHERE id = ?");
+            // Lấy thông tin đơn hàng
+            $order = $this->orderModel->getById($item['order_id']);
+            $expectedDate = $order['return_date'];
+            $actualDate = $order['actual_return_date'] ?? date('Y-m-d');
+            $expected = new \DateTime($expectedDate);
+            $actual = new \DateTime($actualDate);
+            $daysLate = ($actual > $expected) ? $actual->diff($expected)->days : 0;
+            if ($daysLate > 0 && $order['late_fee_status'] !== 'paid') {
+                $lateFee = $daysLate * 50000; // hoặc tính theo % total_price
+                $stmt = $conn->prepare("UPDATE orders SET late_fee = ?, late_fee_status = 'unpaid' WHERE id = ?");
                 $stmt->bind_param("di", $lateFee, $item['order_id']);
                 $stmt->execute();
             }
 
             $remaining = $this->orderItemModel->countNotReturnedByOrder($item['order_id']);
             if ($remaining == 0) {
-                $this->orderModel->updateStatus($item['order_id'], 'returning');
-                // Không chuyển deposit_status ở đây, sẽ chuyển khi hoàn cọc
+                if ($order['status'] !== 'completed') {
+                    $this->orderModel->updateStatus($item['order_id'], 'returning');
+                }
+                if ($order['status'] == 'completed' && $order['deposit_status'] == 'pending') {
+                    $this->orderModel->updateDepositStatus($item['order_id'], 'pending_return');
+                }
             }
 
             $conn->commit();
@@ -233,8 +336,8 @@ class OrderController extends Controller
             return $this->json(['success' => false, 'error' => 'Đơn hàng không tồn tại']);
         }
 
-        if (!in_array($order['status'], ['confirmed', 'renting'])) {
-            return $this->json(['success' => false, 'error' => 'Đơn hàng không ở trạng thái đang thuê']);
+        if (!in_array($order['status'], ['confirmed', 'renting', 'returning'])) {
+            return $this->json(['success' => false, 'error' => 'Đơn hàng không ở trạng thái hợp lệ để cập nhật ngày trả thực tế']);
         }
 
         if (!empty($order['actual_return_date'])) {
@@ -244,12 +347,17 @@ class OrderController extends Controller
         $expected = new \DateTime($order['return_date']);
         $actual = new \DateTime($actualReturnDate);
 
-        $lateFee = 0;
-        $lateFeeStatus = 'paid';
-        if ($actual > $expected) {
-            $daysLate = $actual->diff($expected)->days;
-            $lateFee = $daysLate * 50000;
-            $lateFeeStatus = 'unpaid';
+        $lateFee = $order['late_fee'] ?? 0;
+        $lateFeeStatus = $order['late_fee_status'] ?? 'paid';
+        if ($order['late_fee_status'] !== 'paid') {
+            if ($actual > $expected) {
+                $daysLate = $actual->diff($expected)->days;
+                $lateFee = $daysLate * 50000;
+                $lateFeeStatus = 'unpaid';
+            } else {
+                $lateFee = 0;
+                $lateFeeStatus = 'paid';
+            }
         }
 
         $conn = $this->orderModel->getConnection();
@@ -257,7 +365,12 @@ class OrderController extends Controller
         try {
             $items = $this->orderItemModel->getByOrder($orderId);
             foreach ($items as $item) {
-                $this->productModel->decreaseRentedQuantity($item['product_id'], $item['quantity']);
+                $this->productModel->decreaseVariantRentedQuantity(
+                    $item['product_id'],
+                    $item['color'] ?? '',
+                    $item['size'] ?? '',
+                    $item['quantity']
+                );
             }
 
             $sql = "UPDATE orders SET actual_return_date = ?, late_fee = ?, late_fee_status = ?, status = 'returning' WHERE id = ?";
@@ -416,17 +529,32 @@ class OrderController extends Controller
                     $totalPenalty += $itemDeposit * 0.5;
                     $allGood = false;
                     // Cập nhật kho: giảm rented_quantity và giảm stock (do hỏng)
-                    $productModel->decreaseRentedQuantity($item['product_id'], $quantity);
+                    $productModel->decreaseVariantRentedQuantity(
+                        $item['product_id'],
+                        $item['color'] ?? '',
+                        $item['size'] ?? '',
+                        $quantity
+                    );
                     $productModel->decreaseStock($item['product_id'], $quantity);
                 } elseif ($status == 'lost') {
                     $totalPenalty += $itemDeposit;
                     $allGood = false;
                     // Mất: giảm rented_quantity và giảm stock
-                    $productModel->decreaseRentedQuantity($item['product_id'], $quantity);
+                    $productModel->decreaseVariantRentedQuantity(
+                        $item['product_id'],
+                        $item['color'] ?? '',
+                        $item['size'] ?? '',
+                        $quantity
+                    );
                     $productModel->decreaseStock($item['product_id'], $quantity);
                 } else { // good
                     // Chỉ giảm rented_quantity, không giảm stock
-                    $productModel->decreaseRentedQuantity($item['product_id'], $quantity);
+                    $productModel->decreaseVariantRentedQuantity(
+                        $item['product_id'],
+                        $item['color'] ?? '',
+                        $item['size'] ?? '',
+                        $quantity
+                    );
                 }
             }
 
@@ -442,6 +570,10 @@ class OrderController extends Controller
             $updated = $this->orderModel->updateDepositStatus($orderId, $newStatus, $refundAmount);
             if (!$updated) {
                 throw new \Exception('Cập nhật deposit status thất bại');
+            }
+
+            if ($order['status'] !== 'completed') {
+                $this->orderModel->updateStatus($orderId, 'completed');
             }
 
             $conn->commit();
@@ -469,19 +601,31 @@ class OrderController extends Controller
 
         $approved = 0;
         $skipped = 0;
+        $emailService = new \App\Services\EmailService();
+
         foreach ($orderIds as $id) {
             $order = $this->orderModel->getById($id);
             if ($order && in_array($order['status'], ['pending', 'waiting_confirm'])) {
                 $result = $this->orderModel->confirmOrder($id);
-                if ($result === true) $approved++;
-                else $skipped++;
+                if ($result === true) {
+                    $approved++;
+                    // Gửi email xác nhận
+                    try {
+                        $emailService->sendOrderConfirmed($order);
+                        error_log("Email confirmed sent for order #{$id}");
+                    } catch (\Exception $e) {
+                        error_log("Email error for order #{$id}: " . $e->getMessage());
+                    }
+                } else {
+                    $skipped++;
+                }
             } else {
                 $skipped++;
             }
         }
         return $this->json(['success' => true, 'approved' => $approved, 'skipped' => $skipped]);
     }
-
+    
     public function batchCancel()
     {
         $input = json_decode(file_get_contents('php://input'), true);

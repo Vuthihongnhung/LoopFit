@@ -1,4 +1,4 @@
-﻿﻿﻿/* ========== RESET & GLOBAL ========== */
+﻿﻿﻿﻿﻿/* ========== RESET & GLOBAL ========== */
 * {
     margin: 0;
     padding: 0;
@@ -3734,4 +3734,291 @@ a.btn-secondary {
 
 .nav-item-child.active i {
     color: white;
+}
+/* ========== ADMIN CHAT ========== */
+.chat-admin-container {
+    display: flex;
+    height: calc(100vh - 60px);
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.session-list {
+    width: 320px;
+    background: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+}
+
+.session-header {
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+    background: #fff;
+}
+
+.session-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.session-header p {
+    margin: 5px 0 0;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.session-items {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.session-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.session-item:hover {
+    background: #fff;
+}
+
+.session-item.active {
+    background: #e8f0fe;
+    border-left: 3px solid #718BBC;
+}
+
+.session-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.session-id {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2c3e66;
+}
+
+.unread-badge {
+    background: #dc3545;
+    color: white;
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.session-time {
+    font-size: 11px;
+    color: #6c757d;
+}
+
+.session-preview {
+    font-size: 12px;
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+}
+
+.chat-area-header {
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+    background: #fff;
+}
+
+.chat-area-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.chat-area-header p {
+    margin: 5px 0 0;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.chat-messages-admin {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message-item {
+    display: flex;
+}
+
+.message-item.admin {
+    justify-content: flex-end;
+}
+
+.message-item.user {
+    justify-content: flex-start;
+}
+
+.message-bubble {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 18px;
+}
+
+.message-item.admin .message-bubble {
+    background: #718BBC;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message-item.user .message-bubble {
+    background: white;
+    color: #2c3e66;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border: 1px solid #e9ecef;
+}
+
+.message-text {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.message-time {
+    font-size: 10px;
+    margin-top: 5px;
+    opacity: 0.7;
+}
+
+.chat-input-area-admin {
+    padding: 15px 20px;
+    background: #fff;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 12px;
+}
+
+.chat-input-admin {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 24px;
+    font-size: 14px;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+}
+
+.chat-input-admin:focus {
+    border-color: #718BBC;
+}
+
+.send-btn-admin {
+    width: 45px;
+    height: 45px;
+    background: #718BBC;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+}
+
+.empty-chat {
+    text-align: center;
+    padding: 50px;
+    color: #6c757d;
+}
+
+.empty-chat i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.3;
+}
+.delete-session-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-session-btn:hover {
+    color: #c82333 !important;
+    transform: scale(1.1);
+}
+.delete-session-btn i {
+    font-size: 14px;
+}
+/* Màu xanh giống sidebar + hiệu ứng chạy */
+.chat-area-header {
+    background: linear-gradient(135deg, #0d4864, #1e40af, #13707e, #5589dc);
+    background-size: 300% 300%;
+    animation: headerGradient 4s ease infinite;
+    color: white;
+    border-radius: 16px 16px 0 0;
+}
+
+@keyframes headerGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.chat-area-header h4, .chat-area-header p {
+    color: white;
+}
+
+.chat-area-header button {
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.chat-area-header button:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.02);
+}
+.chat-area-header button#resetChatBtn {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.3s !important;
+    font-weight: 500 !important;
+}
+
+.chat-area-header button#resetChatBtn:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: scale(1.02) !important;
+}
+.sticker-panel.show {
+    display: grid !important;
+}
+.sticker-item {
+    font-size: 28px;
+    cursor: pointer;
+    text-align: center;
+    padding: 8px;
+    border-radius: 12px;
+}
+.sticker-item:hover {
+    background: #f0f2f5;
 }

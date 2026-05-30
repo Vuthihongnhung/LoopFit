@@ -31,6 +31,15 @@ $router->get('/register', [App\Controllers\User\AuthController::class, 'register
 $router->post('/register', [App\Controllers\User\AuthController::class, 'register']);
 $router->get('/logout', [App\Controllers\User\AuthController::class, 'logout']);
 
+ // Chat (cho cả khách chưa đăng nhập)
+$router->get('/chat/get-messages', [App\Controllers\User\ChatController::class, 'getMessages']);
+$router->post('/chat/send', [App\Controllers\User\ChatController::class, 'sendMessage']);
+$router->post('/chat/bot-reply', [App\Controllers\User\ChatController::class, 'botReply']);
+$router->get('/chat/get-session', [App\Controllers\User\ChatController::class, 'getSession']);
+$router->get('/chat/search-faq', [App\Controllers\User\ChatController::class, 'searchFaq']);
+$router->get('/chat/get-stickers', [App\Controllers\User\ChatController::class, 'getStickers']);
+$router->get('/chat/get-user', [App\Controllers\User\ChatController::class, 'getUserInfo']);
+
 // ===== NHÓM ROUTE CẦN ĐĂNG NHẬP VÀ CHỈ DÀNH CHO USER (KHÔNG CHO ADMIN) =====
 $router->group(['middleware' => [UserMiddleware::class]], function($router) {
     // Profile
@@ -58,4 +67,6 @@ $router->group(['middleware' => [UserMiddleware::class]], function($router) {
     // Đánh giá sản phẩm sau khi đơn hàng hoàn tất
     $router->get('/review/order/{order_id}/product/{product_id}', [App\Controllers\User\ReviewController::class, 'showForm']);
     $router->post('/review/submit', [App\Controllers\User\ReviewController::class, 'submit']);
+
+   
 });
