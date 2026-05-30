@@ -13,14 +13,25 @@ class Payment extends Model
      * @param array $data ['order_id', 'amount', 'method', 'status']
      * @return bool
      */
+    private function getNextId() {
+        $sql = "SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM payments";
+        $result = $this->conn->query($sql);
+        if ($result) {
+            $row = $result->fetch_assoc();
+            return (int)($row['next_id'] ?? 1);
+        }
+        return 1;
+    }
+
     public function create($data) {
-        $sql = "INSERT INTO payments (order_id, amount, method, status) VALUES (?, ?, ?, ?)";
+        $nextId = $this->getNextId();
+        $sql = "INSERT INTO payments (id, order_id, amount, method, status) VALUES (?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) {
             error_log("Payment::create - Prepare lỗi: " . $this->conn->error);
             return false;
         }
-        $stmt->bind_param("idss", $data['order_id'], $data['amount'], $data['method'], $data['status']);
+        $stmt->bind_param("iidss", $nextId, $data['order_id'], $data['amount'], $data['method'], $data['status']);
         if ($stmt->execute()) {
             $stmt->close();
             return true;

@@ -101,6 +101,8 @@ class AuthController extends Controller
             'address' => $address,
             'role'    => 'user'
         ];
+        // Xóa session chat cũ của khách
+        unset($_SESSION['chat_session_id']);
 
         return $this->jsonResponse(['success' => true, 'message' => 'Đăng ký thành công']);
     }
@@ -169,7 +171,7 @@ class AuthController extends Controller
             'address' => $user['address'] ?? '',
             'role'    => 'user'  
         ];
-
+        unset($_SESSION['chat_session_id']);
         $redirectUrl = BASE_URL . '/';
 
         if ($this->isAjax()) {
@@ -187,6 +189,7 @@ class AuthController extends Controller
     /* ===== Đăng xuất ===== */
     public function logout()
     {
+         unset($_SESSION['chat_session_id']);
         if ($this->isAjax()) {
             unset($_SESSION['user']);
             return $this->jsonResponse(['success' => true, 'message' => 'Đăng xuất thành công']);
