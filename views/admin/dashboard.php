@@ -55,7 +55,7 @@
                     </tr>
                 </thead>
                 <tbody id="pendingPaymentList">
-                    <tr><td colspan="4" style="padding: 20px; text-align: center;">Đang tải...</td>
+                    <tr><td colspan="4" style="padding: 20px; text-align: center;">Đang tải...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -78,20 +78,50 @@
                     </tr>
                 </thead>
                 <tbody id="pendingDepositList">
-                    <tr><td colspan="4" style="padding: 20px; text-align: center;">Đang tải...</td>
+                    <td><td colspan="4" style="padding: 20px; text-align: center;">Đang tải...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Biểu đồ -->
+<!-- Biểu đồ doanh thu theo tháng (cũ) -->
 <div class="card" style="margin-bottom: 30px;">
     <div class="card-header" style="background: linear-gradient(135deg, #4a67c5, #2563eb);">
         <h3 style="color: white; margin: 0;"><i class="fas fa-chart-bar"></i> Biểu đồ doanh thu theo tháng</h3>
     </div>
     <div class="card-body" style="padding: 20px;">
         <canvas id="revenueChart" width="800" height="300"></canvas>
+    </div>
+</div>
+
+<!-- 4 biểu đồ mới (ngày, tháng, quý, năm) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">Doanh thu theo ngày (7 ngày gần nhất)</div>
+            <div class="card-body">
+                <canvas id="dailyRevenueChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">Doanh thu theo quý</div>
+            <div class="card-body">
+                <canvas id="quarterlyRevenueChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">Doanh thu theo năm (5 năm gần nhất)</div>
+            <div class="card-body">
+                <canvas id="yearlyRevenueChart" height="300"></canvas>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -112,14 +142,68 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="4" style="text-align: center;">Đang tải...</td><\/tr>
+                    <tr><td colspan="4" style="text-align: center;">Đang tải...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<style>
+.btn-confirm-payment {
+    background: #209a71;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+}
+.btn-confirm-payment:hover {
+    background: #1da87c;
+}
+.btn-deposit-small {
+    background: #315dbb;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+}
+.btn-deposit-small:hover {
+    background: #3960ca;
+}
+.row .card {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+.row .card-header {
+    border-bottom: 1px solid #e2e8f0;
+}
+.row table {
+    border-collapse: collapse;
+}
+.row table th {
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 1px solid #638ec7;
+}
+.row table td {
+    border-bottom: 1px solid #a2bfdc;
+}
+.row table tr:last-child td {
+    border-bottom: none;
+}
+.row table tr:hover td {
+    background: #b9d6f4;
+}
+</style>
+
 <script>
 const BASE_URL = '<?php echo BASE_URL; ?>';
 
@@ -235,7 +319,6 @@ window.confirmPaymentFromDashboard = function(orderId) {
         if(data.success) {
             showToast(data.message, 'success');
             loadPendingPayments();
-            // Cập nhật lại thống kê
             fetch(BASE_URL + '/index.php?url=admin/api/stats')
                 .then(res => res.json())
                 .then(stats => {
@@ -248,12 +331,12 @@ window.confirmPaymentFromDashboard = function(orderId) {
     .catch(err => showToast('Lỗi kết nối', 'error'));
 };
 
-// Hoàn cọc từ dashboard (chuyển sang trang chi tiết đơn hàng)
+// Hoàn cọc từ dashboard
 window.processDepositFromDashboard = function(orderId) {
     window.location.href = BASE_URL + '/index.php?url=admin/orders/detail&id=' + orderId;
 };
 
-// Load biểu đồ
+// Load biểu đồ doanh thu theo tháng (cũ)
 fetch(BASE_URL + '/index.php?url=admin/api/monthly-revenue')
     .then(res => res.json())
     .then(data => {
@@ -300,85 +383,65 @@ fetch(BASE_URL + '/index.php?url=admin/api/monthly-revenue')
     })
     .catch(err => console.error('Lỗi load biểu đồ:', err));
 
-// Load top sản phẩm
-fetch(BASE_URL + '/index.php?url=admin/api/top-products')
-    .then(res => res.json())
-    .then(data => {
-        if(data.success && data.data.length > 0) {
-            let html = '';
-            data.data.forEach((product, index) => {
-                html += `<tr>
-                    <td>${index + 1}</td>
-                    <td><strong>${escapeHtml(product.name)}</strong></td>
-                    <td>${product.total_rented || 0} lần</td>
-                    <td>${formatNumber(product.total_revenue || 0)}đ</td>
-                </tr>`;
-            });
-            document.querySelector('#topProductsTable tbody').innerHTML = html;
-        } else {
-            document.querySelector('#topProductsTable tbody').innerHTML = '<tr><td colspan="4" style="text-align: center;">📭 Chưa có dữ liệu</td></tr>';
+// Load 4 biểu đồ mới
+document.addEventListener('DOMContentLoaded', function() {
+    const baseUrl = window.BASE_URL || '<?= rtrim(BASE_URL, '/') ?>';
+    
+    function apiUrl(endpoint) {
+        return baseUrl + '/index.php?url=' + endpoint;
+    }
+
+    const charts = [
+        { url: 'admin/api/revenue/daily', canvas: 'dailyRevenueChart', type: 'bar' },
+        { url: 'admin/api/revenue/monthly', canvas: 'monthlyRevenueChart', type: 'line' },
+        { url: 'admin/api/revenue/quarterly', canvas: 'quarterlyRevenueChart', type: 'bar' },
+        { url: 'admin/api/revenue/yearly', canvas: 'yearlyRevenueChart', type: 'line' }
+    ];
+    
+    charts.forEach(ch => {
+        const canvas = document.getElementById(ch.canvas);
+        if(canvas) {
+            fetch(apiUrl(ch.url))
+                .then(res => res.json())
+                .then(data => {
+                    new Chart(canvas, {
+                        type: ch.type,
+                        data: data,
+                        options: {
+                            responsive: true,
+                            plugins: { tooltip: { callbacks: { label: ctx => ctx.raw.toLocaleString() + 'đ' } } },
+                            scales: { y: { ticks: { callback: val => val.toLocaleString() + 'đ' } } }
+                        }
+                    });
+                }).catch(e => console.error('Lỗi biểu đồ ' + ch.canvas, e));
         }
-    })
-    .catch(err => {
-        console.error('Lỗi load top products:', err);
-        document.querySelector('#topProductsTable tbody').innerHTML = '<tr><td colspan="4" style="text-align: center;">❌ Lỗi tải dữ liệu</td></tr>';
     });
 
-// Khởi tạo
+    // Top sản phẩm
+    const topTableBody = document.querySelector('#topProductsTable tbody');
+    if(topTableBody) {
+        fetch(apiUrl('admin/api/top-products'))
+            .then(res => res.json())
+            .then(data => {
+                if(data.success && data.data.length > 0) {
+                    let html = '';
+                    data.data.forEach((p, i) => {
+                        html += `<tr>
+                            <td>${i+1}</td>
+                            <td><strong>${escapeHtml(p.name)}</strong></td>
+                            <td>${p.total_rented || 0} lần</td>
+                            <td>${formatNumber(p.total_revenue || 0)}đ</td>
+                        </tr>`;
+                    });
+                    topTableBody.innerHTML = html;
+                } else {
+                    topTableBody.innerHTML = '<tr><td colspan="4">📭 Chưa có dữ liệu</td></tr>';
+                }
+            }).catch(e => console.error('Lỗi top products:', e));
+    }
+});
+
+// Khởi tạo các hàm load
 loadPendingPayments();
 loadPendingDeposits();
 </script>
-
-<style>
-.btn-confirm-payment {
-    background: #209a71;
-    color: white;
-    border: none;
-    padding: 4px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 11px;
-}
-.btn-confirm-payment:hover {
-    background: #1da87c;
-}
-.btn-deposit-small {
-    background: #315dbb;
-    color: white;
-    border: none;
-    padding: 4px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 11px;
-}
-.btn-deposit-small:hover {
-    background: #3960ca;
-}
-/* Khung đẹp cho dashboard */
-.row .card {
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    overflow: hidden;
-}
-.row .card-header {
-    border-bottom: 1px solid #e2e8f0;
-}
-.row table {
-    border-collapse: collapse;
-}
-.row table th {
-    font-weight: 600;
-    color: #1e293b;
-    border-bottom: 1px solid #638ec7;
-}
-.row table td {
-    border-bottom: 1px solid #a2bfdc;
-}
-.row table tr:last-child td {
-    border-bottom: none;
-}
-.row table tr:hover td {
-    background: #b9d6f4;
-}
-</style>

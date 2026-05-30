@@ -72,6 +72,10 @@
                         </a>
                     </div>
                 </div>
+                 <!-- ===== CHAT HỖ TRỢ ===== -->
+                <a href="<?php echo BASE_URL; ?>/index.php?url=admin/chat" class="nav-item <?php echo ($activeMenu === 'chat') ? 'active' : ''; ?>">
+                    <i class="fas fa-comments"></i> <span>Chat hỗ trợ</span>
+                </a>
 
             </nav>
             <div class="sidebar-footer">
@@ -85,6 +89,22 @@
         <main class="main-content">
             <header class="top-bar">
                 <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
+
+                <!-- Icon chuông thông báo admin -->
+                <button id="adminNotificationBell" style="background: #007bff; border: none; color: white; font-size: 20px; cursor: pointer; padding: 8px 12px; border-radius: 4px; margin-left: 15px;">
+                    <i class="fas fa-bell"></i> <span id="adminNotificationBadge" style="background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; margin-left: 5px; display: none;">0</span>
+                </button>
+                <div id="adminNotificationPanel" style="display: none; position: absolute; right: 20px; top: 50px; width: 320px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; color: #333;">
+                    <div style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; display: flex; justify-content: space-between;">
+                        <span>Thông báo hệ thống</span>
+                        <button id="adminMarkAllReadBtn" style="background: none; border: none; color: #007bff; cursor: pointer;">Đánh dấu đã đọc</button>
+                    </div>
+                    <div id="adminNotificationList" style="max-height: 350px; overflow-y: auto; padding: 5px;"></div>
+                    <div style="padding: 8px; text-align: center; border-top: 1px solid #eee;">
+                        <a href="<?= BASE_URL ?>/admin/notifications" style="color: #007bff; text-decoration: none;">Xem tất cả</a>
+                    </div>
+                </div>
+
                 <div class="user-info">
                     <i class="fas fa-user-circle"></i>
                     <span><?php echo htmlspecialchars($_SESSION['admin_name'] ?? 'Admin'); ?></span>
@@ -96,7 +116,13 @@
             </div>
         </main>
     </div>
+
+    <!-- Các script -->
     <script src="<?php echo BASE_URL; ?>/assets/admin/js/admin.js"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/admin/js/admin-notification.js"></script>
+    <script>
+    window.BASE_URL = '<?= BASE_URL ?>';
+    </script>
     <script>
         // Toggle menu cha-con
         document.querySelectorAll('.nav-group-header').forEach(header => {
@@ -109,6 +135,7 @@
         document.getElementById('menuToggle')?.addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('open');
         });
-    </>
-</body>
+    </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</body> 
 </html>

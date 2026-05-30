@@ -29,6 +29,9 @@
             <a href="<?= BASE_URL ?>/orders" class="truck-icon" title="Đơn hàng">
                 <i class="bi bi-truck"></i>
             </a>
+            <?php if (isset($_SESSION['user'])): ?>
+    <?php include __DIR__ . '/notification-bell.php'; ?>
+<?php endif; ?>
             <a href="<?= BASE_URL ?>/profile" class="user-icon">
                 <i class="bi bi-person"></i>
             </a>
