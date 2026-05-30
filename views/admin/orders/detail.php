@@ -96,8 +96,8 @@ $lateFeeStatus = $order['late_fee_status'] ?? 'unpaid';
                         <td class="py-1.5 font-medium text-gray-500">Ngày trả thực tế</td>
                         <td class="py-1.5">
                             <?php 
-                            $canUpdateActual = in_array($orderStatus, ['pending', 'confirmed', 'preparing', 'shipping', 'renting']);
                             $actualDate = $order['actual_return_date'] ?? '';
+                            $canUpdateActual = in_array($orderStatus, ['confirmed', 'renting', 'returning']) && empty($actualDate);
                             ?>
                             <?php if ($canUpdateActual): ?>
                                 <div class="flex flex-wrap items-center gap-2">
@@ -105,12 +105,10 @@ $lateFeeStatus = $order['late_fee_status'] ?? 'unpaid';
                                     <button id="update_actual_return_btn" data-order-id="<?php echo $order['id']; ?>" class="px-3 py-1 bg-primary-600 text-white text-xs rounded-md hover:bg-primary-700">Cập nhật & tính phí trễ</button>
                                     <span id="update_status_msg" class="text-xs text-green-600 hidden"></span>
                                 </div>
-                                <div id="current_actual_return" class="mt-1 text-gray-500 text-[11px]">
-                                    Hiện tại: <?php echo $actualDate ? date('d/m/Y', strtotime($actualDate)) : 'Chưa có'; ?>
-                                </div>
-                            <?php else: ?>
-                                <span class="text-gray-700"><?php echo $actualDate ? date('d/m/Y', strtotime($actualDate)) : '<span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-700">Chưa trả</span>'; ?></span>
                             <?php endif; ?>
+                            <div id="current_actual_return" class="mt-1 text-gray-700 font-medium">
+                                <?php echo $actualDate ? date('d/m/Y', strtotime($actualDate)) : 'Chưa có'; ?>
+                            </div>
                         </td>
                     </tr>
                     
@@ -320,6 +318,10 @@ $lateFeeStatus = $order['late_fee_status'] ?? 'unpaid';
     <div class="flex justify-end mt-3">
         <div class="text-red-600 text-xs font-medium">⚠️ Khách chưa thanh toán phí trễ, chưa thể hoàn cọc.</div>
     </div>
+    <?php elseif ($orderStatus == 'completed' && $depositStatus == 'pending_return' && $lateFee > 0 && $lateFeeStatus != 'paid'): ?>
+    <div class="flex justify-end mt-3">
+        <div class="text-red-600 text-xs font-medium">⚠️ Đơn đã hoàn tất nhưng phí trễ chưa thanh toán, chưa thể hoàn cọc.</div>
+    </div>
     <?php endif; ?>
 </div>
 
@@ -359,9 +361,12 @@ $lateFeeStatus = $order['late_fee_status'] ?? 'unpaid';
 
         // 1. Cập nhật trạng thái đơn hàng
         const statusSelect = document.getElementById('orderStatus');
+        let statusUpdating = false;
         if (statusSelect) {
             console.log('Tìm thấy orderStatus, gắn event change');
             statusSelect.addEventListener('change', async function(e) {
+                if (statusUpdating) return;
+                statusUpdating = true;
                 const orderId = this.dataset.orderId;
                 const newStatus = this.value;
                 const url = BASE_URL + '/admin/orders/updateStatus';
@@ -379,6 +384,8 @@ $lateFeeStatus = $order['late_fee_status'] ?? 'unpaid';
                     }
                 } catch (err) {
                     console.error('Lỗi khi gọi updateStatus:', err);
+                } finally {
+                    statusUpdating = false;
                 }
             });
         }
