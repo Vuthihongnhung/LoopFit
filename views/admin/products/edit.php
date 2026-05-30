@@ -4,287 +4,229 @@ $activeMenu = 'products';
 $baseUrl = BASE_URL ?? '/LoopFit/public';
 ?>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap');
-
+/* ===== FORM SỬA SẢN PHẨM ===== */
 .products-page {
-    max-width: 760px;
+    max-width: 800px;
     margin: 0 auto;
-    padding: 12px;
-    font-family: 'Montserrat', sans-serif;
-    color: #24344f;
-    background: #F0F0ED;
+    padding: 10px;
 }
-
 .products-page .card {
-    background: #ffffff;
+    background: linear-gradient(145deg, #fefce8 0%, #fef3c7 100%);
     border-radius: 24px;
-    box-shadow: 0 20px 45px rgba(33, 54, 94, 0.12);
-    border: 1px solid rgba(113, 139, 188, 0.16);
+    box-shadow: 0 25px 45px -12px rgba(245, 158, 11, 0.3);
+    border: 1px solid rgba(245, 158, 11, 0.2);
     overflow: hidden;
 }
-
 .products-page .card-body {
     padding: 24px 28px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(2px);
 }
-
 .products-page .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 12px;
 }
-
 .products-page .page-header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: #718BBC;
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #92400e, #d97706, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin: 0;
-    letter-spacing: -0.4px;
+    letter-spacing: -1px;
 }
-
 .products-page .page-header h1::before {
     content: "✏️ ";
-    color: #718BBC;
+    background: none;
+    -webkit-text-fill-color: #d97706;
 }
-
 .products-page .btn-secondary {
-    background: #ffffff;
-    color: #718BBC;
-    padding: 10px 22px;
-    border-radius: 999px;
-    border: 1px solid #718BBC;
+    background: linear-gradient(135deg, #d97706, #f59e0b);
+    color: white;
+    padding: 7px 18px;
+    border-radius: 40px;
+    border: none;
     text-decoration: none;
     font-weight: 600;
-    font-size: 14px;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    font-size: 13px;
+    transition: all 0.3s;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    white-space: nowrap;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
 }
-
 .products-page .btn-secondary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(113, 137, 188, 0.18);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
 }
-
-.products-page .variant-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.products-page .variant-actions .btn-secondary {
-    padding: 8px 14px;
-    min-width: 130px;
-}
-
-.products-page .variant-actions small {
-    margin: 0;
-    color: #475569;
-    line-height: 1.4;
-}
-
 .products-page .form-group {
     margin-bottom: 14px;
 }
-
 .products-page .form-row {
     display: flex;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: wrap;
 }
-
 .products-page .form-row .form-group {
     flex: 1;
-    min-width: 160px;
+    min-width: 120px;
 }
-
 .products-page label {
     display: block;
     font-weight: 600;
     font-size: 12px;
-    margin-bottom: 6px;
-    color: #35415d;
+    margin-bottom: 5px;
+    color: #92400e;
 }
-
+.products-page label i {
+    color: #f59e0b;
+    width: 18px;
+    margin-right: 6px;
+    font-size: 12px;
+}
 .products-page input[type="text"],
 .products-page input[type="number"],
 .products-page select,
 .products-page textarea {
     width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #d7dbe5;
+    padding: 7px 12px;
+    border: 1.5px solid #fde68a;
     border-radius: 16px;
     font-size: 13px;
-    font-family: 'Montserrat', sans-serif;
-    transition: border-color 0.25s ease, box-shadow 0.25s ease;
-    background: #f7f8fb;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: #fffbeb;
 }
-
 .products-page input:focus,
 .products-page select:focus,
 .products-page textarea:focus {
     outline: none;
-    border-color: #718BBC;
-    box-shadow: 0 0 0 4px rgba(113, 139, 188, 0.12);
-    background: #ffffff;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    background: white;
 }
-
 .products-page .checkbox-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     padding: 4px 0;
 }
-
 .products-page .checkbox-group label {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     font-weight: 500;
-    font-size: 13px;
-    padding: 10px 16px;
-    border-radius: 999px;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 30px;
     cursor: pointer;
     transition: all 0.25s ease;
-    background: #f7f8fb;
-    border: 1px solid #e4e7ef;
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
 }
-
+/* ... (giữ nguyên các style màu sắc như cũ) ... */
+.products-page .checkbox-group label:has(input[value="Trắng"]) { color: #6b7280; border-color: #d1d5db; }
+.products-page .checkbox-group label:has(input[value="Đen"]) { color: #111827; border-color: #9ca3af; }
+.products-page .checkbox-group label:has(input[value="Đỏ"]) { color: #dc2626; border-color: #fca5a5; }
+.products-page .checkbox-group label:has(input[value="Xanh"]) { color: #2563eb; border-color: #93c5fd; }
+.products-page .checkbox-group label:has(input[value="Vàng"]) { color: #ca8a04; border-color: #fde047; }
+.products-page .checkbox-group label:has(input[value="Hồng"]) { color: #ec4899; border-color: #fbcfe8; }
+.products-page .checkbox-group label:has(input[value="Tím"]) { color: #8b5cf6; border-color: #c4b5fd; }
+.products-page .checkbox-group label:has(input[value="Xanh than"]) { color: #1e3a5f; border-color: #93c5fd; background: #eff6ff; }
+.products-page .checkbox-group label:has(input[value="Xanh lục"]) { color: #10b981; border-color: #a7f3d0; background: #ecfdf5; }
+.products-page .checkbox-group label:has(input[value="Nâu"]) { color: #78350f; border-color: #d4a574; background: #fef3c7; }
+.products-page .checkbox-group label:has(input[value="Xám"]) { color: #6b7280; border-color: #d1d5db; background: #f9fafb; }
+.products-page .checkbox-group label:has(input[value="Be"]) { color: #a8715a; border-color: #e5cdb5; background: #fdf8ed; }
+.products-page .checkbox-group label:has(input[value="Cam"]) { color: #ea580c; border-color: #fdba74; background: #fff7ed; }
+.products-page .checkbox-group label:has(input[value="Trắng"])::before { content: "●"; color: #9ca3af; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Đen"])::before { content: "●"; color: #1f2937; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Đỏ"])::before { content: "●"; color: #ef4444; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Xanh"])::before { content: "●"; color: #3b82f6; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Vàng"])::before { content: "●"; color: #eab308; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Hồng"])::before { content: "●"; color: #ec4899; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Tím"])::before { content: "●"; color: #a855f7; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Xanh than"])::before { content: "●"; color: #1e3a5f; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Xanh lục"])::before { content: "●"; color: #10b981; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Nâu"])::before { content: "●"; color: #78350f; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Xám"])::before { content: "●"; color: #6b7280; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Be"])::before { content: "●"; color: #a8715a; margin-right: 5px; font-size: 11px; }
+.products-page .checkbox-group label:has(input[value="Cam"])::before { content: "●"; color: #ea580c; margin-right: 5px; font-size: 11px; }
 .products-page .checkbox-group label:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(113, 139, 188, 0.12);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
-
 .products-page .checkbox-group input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: #718BBC;
+    width: 14px;
+    height: 14px;
+    accent-color: #f59e0b;
     cursor: pointer;
-    margin: 0;
 }
-
 .products-page input[type="file"] {
-    padding: 8px 0;
+    padding: 6px 0;
     border: none;
 }
-
 .products-page input[type="file"]::file-selector-button {
-    padding: 10px 18px;
-    background: #718BBC;
+    padding: 6px 16px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
     border: none;
-    border-radius: 999px;
-    color: white;
+    border-radius: 30px;
+    color: #92400e;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
-    transition: background 0.25s ease, transform 0.25s ease;
+    transition: all 0.25s;
 }
-
 .products-page input[type="file"]::file-selector-button:hover {
-    background: #526b96;
+    background: linear-gradient(135deg, #fde68a, #fcd34d);
     transform: scale(1.02);
 }
-
 .products-page .form-actions {
     display: flex;
-    gap: 14px;
-    margin-top: 26px;
-    padding-top: 18px;
-    border-top: 1px solid rgba(113, 139, 188, 0.18);
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(245, 158, 11, 0.2);
     justify-content: flex-end;
 }
-
 .products-page .btn-primary {
-    background: linear-gradient(135deg, #4f6fa8, #718BBC);
+    background: linear-gradient(135deg, #b45309, #d97706, #f59e0b);
     color: white;
-    padding: 10px 24px;
-    border-radius: 999px;
+    padding: 8px 24px;
+    border-radius: 40px;
     border: none;
     font-weight: 700;
     font-size: 13px;
     cursor: pointer;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-    box-shadow: 0 10px 24px rgba(113, 139, 188, 0.25);
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35);
 }
-
 .products-page .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(113, 139, 188, 0.3);
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.45);
 }
-
 .products-page #currentImagePreview img {
-    border-radius: 14px;
-    border: 1px solid #e3e7f0;
-    padding: 4px;
-    max-width: 100px;
-    margin-top: 10px;
+    border-radius: 12px;
+    border: 2px solid #fde68a;
+    padding: 3px;
+    max-width: 70px;
+    margin-top: 8px;
 }
-
-.products-page .table-responsive {
-    overflow-x: auto;
-}
-
-.products-page .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 12px;
-}
-
-.products-page .data-table th,
-.products-page .data-table td {
-    padding: 14px 12px;
-    border-bottom: 1px solid #e8ebf3;
-    text-align: left;
-}
-
-.products-page .data-table th {
-    background: #f0f2f7;
-    color: #4b5d7b;
-    font-weight: 600;
-}
-
-.products-page .remove-variant-btn {
-    background: #fff1f0;
-    color: #b34040;
-    border: 1px solid #f0c2c1;
-    border-radius: 999px;
-    padding: 8px 14px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.products-page .remove-variant-btn:hover {
-    background: #ffd9d7;
-}
-
 @media (max-width: 768px) {
-    .products-page {
-        padding: 14px;
-    }
-    .products-page .card-body {
-        padding: 24px;
-    }
-    .products-page .form-row {
-        flex-direction: column;
-    }
-    .products-page .page-header {
-        text-align: center;
-    }
-    .products-page .form-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
+    .products-page { padding: 8px; }
+    .products-page .card-body { padding: 16px; }
+    .products-page .form-row { flex-direction: column; gap: 0; }
+    .products-page .page-header { flex-direction: column; text-align: center; }
+    .products-page .page-header h1 { font-size: 20px; }
+    .products-page .checkbox-group label { padding: 4px 10px; font-size: 11px; }
+    .products-page .form-actions { flex-direction: column; }
     .products-page .btn-primary,
-    .products-page .btn-secondary {
-        width: 100%;
-        justify-content: center;
-    }
+    .products-page .btn-secondary { justify-content: center; width: 100%; }
 }
 </style>
 <script>
@@ -366,23 +308,32 @@ $baseUrl = BASE_URL ?? '/LoopFit/public';
                 </div>
 
                 <div class="form-group">
-                    <label>Biến thể sản phẩm</label>
-                    <div class="variant-actions" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-                        <button type="button" id="addVariantBtn" class="btn btn-secondary" style="padding: 8px 12px;">Thêm biến thể</button>
-                        <small style="color:#475569;">Màu sắc - Kích thước - Tồn kho. Nếu có biến thể, tổng tồn kho sẽ được cập nhật tự động.</small>
+                    <label>Màu sắc </label>
+                    <div class="checkbox-group" id="colorGroup">
+                        <label><input type="checkbox" name="colors[]" value="Trắng"> Trắng</label>
+                        <label><input type="checkbox" name="colors[]" value="Đen"> Đen</label>
+                        <label><input type="checkbox" name="colors[]" value="Đỏ"> Đỏ</label>
+                        <label><input type="checkbox" name="colors[]" value="Xanh"> Xanh</label>
+                        <label><input type="checkbox" name="colors[]" value="Vàng"> Vàng</label>
+                        <label><input type="checkbox" name="colors[]" value="Hồng"> Hồng</label>
+                        <label><input type="checkbox" name="colors[]" value="Tím"> Tím</label>
+                        <label><input type="checkbox" name="colors[]" value="Xanh than"> Xanh than</label>
+                        <label><input type="checkbox" name="colors[]" value="Xanh lục"> Xanh lục</label>
+                        <label><input type="checkbox" name="colors[]" value="Nâu"> Nâu</label>
+                        <label><input type="checkbox" name="colors[]" value="Xám"> Xám</label>
+                        <label><input type="checkbox" name="colors[]" value="Be"> Be</label>
+                        <label><input type="checkbox" name="colors[]" value="Cam"> Cam</label>
                     </div>
-                    <div class="table-responsive">
-                        <table class="data-table" id="variantTable" style="min-width: 100%;">
-                            <thead>
-                                <tr>
-                                    <th>Màu sắc</th>
-                                    <th>Kích thước</th>
-                                    <th>Tồn kho</th>
-                                    <th>Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                </div>
+
+                <div class="form-group">
+                    <label>Kích thước </label>
+                    <div class="checkbox-group" id="sizeGroup">
+                        <label><input type="checkbox" name="sizes[]" value="S"> S</label>
+                        <label><input type="checkbox" name="sizes[]" value="M"> M</label>
+                        <label><input type="checkbox" name="sizes[]" value="L"> L</label>
+                        <label><input type="checkbox" name="sizes[]" value="XL"> XL</label>
+                        <label><input type="checkbox" name="sizes[]" value="XXL"> XXL</label>
                     </div>
                 </div>
 
@@ -457,92 +408,6 @@ document.addEventListener('DOMContentLoaded', function() {
         loadChildren(parentSelect.value);
     });
 
-    const variantTableBody = document.querySelector('#variantTable tbody');
-    const addVariantBtn = document.getElementById('addVariantBtn');
-
-    function addVariantRow(variant = { color: '', size: '', stock: 0 }) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>
-                <select name="variant_color[]" required>
-                    <option value="">Chọn màu</option>
-                    <option value="Trắng">Trắng</option>
-                    <option value="Đen">Đen</option>
-                    <option value="Đỏ">Đỏ</option>
-                    <option value="Xanh">Xanh</option>
-                    <option value="Vàng">Vàng</option>
-                    <option value="Hồng">Hồng</option>
-                    <option value="Tím">Tím</option>
-                    <option value="Xanh than">Xanh than</option>
-                    <option value="Xanh lục">Xanh lục</option>
-                    <option value="Nâu">Nâu</option>
-                    <option value="Xám">Xám</option>
-                    <option value="Be">Be</option>
-                    <option value="Cam">Cam</option>
-                </select>
-            </td>
-            <td>
-                <select name="variant_size[]" required>
-                    <option value="">Chọn size</option>
-                    <option value="S">S</option>
-                    <option value="M">M</option>
-                    <option value="L">L</option>
-                    <option value="XL">XL</option>
-                    <option value="XXL">XXL</option>
-                </select>
-            </td>
-            <td>
-                <input type="number" name="variant_stock[]" min="0" value="${variant.stock}" required>
-            </td>
-            <td>
-                <button type="button" class="remove-variant-btn">Xóa</button>
-            </td>
-        `;
-        variantTableBody.appendChild(row);
-
-        const colorSelect = row.querySelector('select[name="variant_color[]"]');
-        const sizeSelect = row.querySelector('select[name="variant_size[]"]');
-        colorSelect.value = variant.color;
-        sizeSelect.value = variant.size;
-
-        colorSelect.addEventListener('mousedown', (e) => e.stopPropagation());
-        sizeSelect.addEventListener('mousedown', (e) => e.stopPropagation());
-
-        const stockInput = row.querySelector('input[name="variant_stock[]"]');
-        stockInput.addEventListener('input', updateProductStockFromVariants);
-
-        const removeBtn = row.querySelector('.remove-variant-btn');
-        removeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            row.remove();
-            updateProductStockFromVariants();
-        });
-
-        updateProductStockFromVariants();
-    }
-
-    addVariantBtn.addEventListener('click', () => addVariantRow());
-
-    function updateProductStockFromVariants() {
-        const stockInput = document.getElementById('productStock');
-        const variantStockInputs = variantTableBody.querySelectorAll('input[name="variant_stock[]"]');
-        const total = Array.from(variantStockInputs).reduce((sum, input) => {
-            const value = parseInt(input.value, 10);
-            return sum + (Number.isFinite(value) ? value : 0);
-        }, 0);
-
-        if (variantStockInputs.length > 0) {
-            stockInput.value = total;
-            stockInput.readOnly = true;
-        } else {
-            stockInput.readOnly = false;
-        }
-    }
-
-    if (!variantTableBody.hasChildNodes()) {
-        addVariantRow();
-    }
-
     // Lấy thông tin sản phẩm
     const urlParams = new URLSearchParams(window.location.search);
     const productId = urlParams.get('id');
@@ -582,14 +447,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     document.getElementById('currentImagePreview').innerHTML = html;
                 }
-                // Biến thể sản phẩm
-                if (p.variants && p.variants.length) {
-                    document.querySelector('#variantTable tbody').innerHTML = '';
-                    p.variants.forEach(v => {
-                        addVariantRow({ color: v.color, size: v.size, stock: v.stock });
+                // Màu sắc
+                if (p.colors) {
+                    const colorsArray = p.colors.split(',').map(c => c.trim());
+                    document.querySelectorAll('#colorGroup input[type="checkbox"]').forEach(cb => {
+                        cb.checked = colorsArray.includes(cb.value);
                     });
-                } else {
-                    document.querySelector('#variantTable tbody').innerHTML = '';
+                }
+                // Kích thước
+                if (p.sizes) {
+                    const sizesArray = p.sizes.split(',').map(s => s.trim());
+                    document.querySelectorAll('#sizeGroup input[type="checkbox"]').forEach(cb => {
+                        cb.checked = sizesArray.includes(cb.value);
+                    });
                 }
 
                 // Xử lý danh mục cha/con

@@ -7,12 +7,27 @@ $activeMenu = 'promotions';
 <div class="promotions-page">
     <div class="page-header">
         <h1><i class="fas fa-tags"></i> Khuyến mãi</h1>
-        <button class="btn btn-primary" id="openModalBtn">
-            <i class="fas fa-plus"></i> Thêm mã giảm giá
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tabs-navigation" style="margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; display: flex; gap: 0;">
+        <button class="tab-btn active" data-tab="tab-discount-codes" style="padding: 12px 20px; border: none; background: none; cursor: pointer; font-size: 16px; border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: 500;">
+            <i class="fas fa-ticket-alt"></i> Mã giảm giá
+        </button>
+        <button class="tab-btn" data-tab="tab-bulk-promotions" style="padding: 12px 20px; border: none; background: none; cursor: pointer; font-size: 16px; border-bottom: 3px solid transparent; color: #6b7280; font-weight: 500;">
+            <i class="fas fa-chart-line"></i> Chương trình khuyến mãi
         </button>
     </div>
 
-    <div class="card">
+    <!-- Tab 1: Mã giảm giá -->
+    <div id="tab-discount-codes" class="tab-content active">
+        <div class="page-header" style="margin-bottom: 20px;">
+            <button class="btn btn-primary" id="openModalBtn">
+                <i class="fas fa-plus"></i> Thêm mã giảm giá
+            </button>
+        </div>
+
+        <div class="card">
         <div class="card-header">
             <h3><i class="fas fa-list"></i> Danh sách mã giảm giá</h3>
             <div class="search-box">
@@ -42,7 +57,13 @@ $activeMenu = 'promotions';
             </table>
         </div>
     </div>
-</div>
+    </div><!-- End of tab-discount-codes -->
+
+    <!-- Tab 2: Chương trình khuyến mãi -->
+    <div id="tab-bulk-promotions" class="tab-content" style="display: none;">
+        <?php include __DIR__ . '/bulk_promotions.php'; ?>
+    </div><!-- End of tab-bulk-promotions -->
+</div><!-- End of promotions-page -->
 
 <!-- Modal thêm/sửa khuyến mãi -->
 <div id="promoModal" class="modal">
@@ -100,3 +121,41 @@ $activeMenu = 'promotions';
 </div>
 
 <script src="<?= BASE_URL ?>/assets/admin/js/promotion.js"></script>
+
+<!-- Tab Navigation Handler -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            
+            // Remove active class từ tất cả button
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.borderBottom = '3px solid transparent';
+                btn.style.color = '#6b7280';
+            });
+            
+            // Remove active class từ tất cả tab content
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+                tab.classList.remove('active');
+            });
+            
+            // Add active class cho button hiện tại
+            this.classList.add('active');
+            this.style.borderBottom = '3px solid #3b82f6';
+            this.style.color = '#3b82f6';
+            
+            // Show tab content
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.style.display = 'block';
+                tabContent.classList.add('active');
+            }
+        });
+    });
+});
+</script>

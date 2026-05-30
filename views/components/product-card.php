@@ -19,12 +19,20 @@ if (empty($firstImage)) {
 }
 $imageUrl = BASE_URL . '/uploads/' . $firstImage;
 
-// Giá sau giảm
-$finalPrice = $price;
-$oldPriceHtml = '';
-if ($discountPercent > 0) {
+// Giá sau giảm (ưu tiên bulk promotion)
+$bulkFinalPrice = $product['final_price'] ?? null;
+$hasBulkDiscount = ($bulkFinalPrice !== null && $bulkFinalPrice != $price);
+
+if ($hasBulkDiscount) {
+    $finalPrice = $bulkFinalPrice;
+    $oldPriceHtml = '<span class="old-price">' . number_format($price) . 'đ</span>';
+    $bulkDiscountPercent = round((1 - $finalPrice / $price) * 100);
+} elseif ($discountPercent > 0) {
     $finalPrice = $price * (100 - $discountPercent) / 100;
     $oldPriceHtml = '<span class="old-price">' . number_format($price) . 'đ</span>';
+} else {
+    $finalPrice = $price;
+    $oldPriceHtml = '';
 }
 $formattedFinalPrice = number_format($finalPrice) . 'đ';
 
@@ -41,9 +49,11 @@ if ($createdAt) {
     <a href="<?= BASE_URL ?>/product/<?= $id ?>" class="product-link">
         <div class="product-image">
             <img src="<?= $imageUrl ?>" alt="<?= htmlspecialchars($name) ?>">
-            <?php if ($discountPercent > 0): ?>
-                <span class="discount-badge">-<?= $discountPercent ?>%</span>
-            <?php endif; ?>
+            <?php if ($hasBulkDiscount): ?>
+    <span class="discount-badge bulk">🔥 -<?= $bulkDiscountPercent ?>%</span>
+<?php elseif ($discountPercent > 0): ?>
+    <span class="discount-badge">-<?= $discountPercent ?>%</span>
+<?php endif; ?>
             <?php if ($isNew): ?>
                 <span class="new-badge">🔥 Mới</span>
             <?php endif; ?>
