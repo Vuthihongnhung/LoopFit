@@ -29,11 +29,6 @@ class Model
         return $this->conn;
     }
 
-    public function getLastError()
-    {
-        return $this->conn ? $this->conn->error : 'Không có kết nối database';
-    }
-
     public function beginTransaction()
     {
         $this->conn->begin_transaction();

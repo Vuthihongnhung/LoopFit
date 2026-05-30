@@ -11,6 +11,12 @@ if (typeof Toast === 'undefined') {
     };
 }
 
+// Helper: gọi API với query string
+function apiUrl(endpoint) {
+    // endpoint có dạng "api/cart/count" hoặc "api/cart/add"
+    return BASE_URL + '/index.php?url=' + endpoint;
+}
+
 // ========== TÍNH TỔNG TIỀN (CHỈ TÍNH CÁC ITEM ĐƯỢC CHỌN) ==========
 function updateCartTotal() {
     let totalRent = 0;
@@ -49,7 +55,7 @@ function updateCartTotal() {
 // ========== CẬP NHẬT BADGE GIỎ HÀNG ==========
 function updateCartCount() {
     if (typeof BASE_URL === 'undefined') return;
-    fetch(BASE_URL + '/api/cart/count')
+    fetch(apiUrl('api/cart/count'))
         .then(res => res.json())
         .then(data => {
             const el = document.getElementById('cart-count');
@@ -63,14 +69,11 @@ let confirmModal = null;
 function initConfirmModal() {
     if (!document.getElementById('confirm-modal')) {
         const modalHtml = `
-           <div id="confirm-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
-                <div style="background:white; padding:24px; border-radius:12px; max-width:400px; width:90%; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
-                    <i class="fas fa-question-circle" style="font-size:48px; color:#f59e0b; margin-bottom:10px;"></i>
-                    <p id="confirm-message" style="font-size:16px; margin-bottom:20px; color:#333;">Bạn có chắc chắn?</p>
-                    <div style="display:flex; gap:12px; justify-content:center;">
-                        <button id="confirm-yes" style="background:#dc3545; color:white; border:none; padding:8px 24px; border-radius:40px; font-weight:600; cursor:pointer;">Có</button>
-                        <button id="confirm-no" style="background:#6c757d; color:white; border:none; padding:8px 24px; border-radius:40px; font-weight:600; cursor:pointer;">Không</button>
-                    </div>
+            <div id="confirm-modal" style="display:none; position:fixed; top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+                <div style="background:white;padding:20px;border-radius:8px;max-width:400px;text-align:center;">
+                    <p id="confirm-message">Bạn có chắc chắn?</p>
+                    <button id="confirm-yes" style="margin:5px;padding:5px 15px;">Có</button>
+                    <button id="confirm-no" style="margin:5px;padding:5px 15px;">Không</button>
                 </div>
             </div>
         `;
@@ -124,7 +127,7 @@ window.updateQuantity = function(cartId, change) {
     }
     updateCartTotal();
 
-    fetch(BASE_URL + '/api/cart/update', {
+    fetch(apiUrl('api/cart/update'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ cart_id: cartId, change: change })
@@ -162,7 +165,7 @@ window.updateQuantity = function(cartId, change) {
 // ========== XÓA SẢN PHẨM ==========
 window.removeFromCart = function(cartId) {
     showConfirm('Bạn có chắc chắn muốn xóa sản phẩm này?', () => {
-        fetch(BASE_URL + '/api/cart/remove', {
+        fetch(apiUrl('api/cart/remove'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ cart_id: cartId })
@@ -190,9 +193,8 @@ window.removeFromCart = function(cartId) {
 let currentEditCartId = null;
 let currentEditProductId = null;
 
-//Lấy danh sách size/màu của sản phẩm từ server
 function fetchProductOptions(productId, callback) {
-    fetch(BASE_URL + '/api/product/options?id=' + productId)
+    fetch(apiUrl('api/product/options?id=' + productId))
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -213,7 +215,6 @@ function showEditModal(cartId, productId, currentSize, currentColor, currentRent
     currentEditProductId = productId;
     let modal = document.getElementById('edit-cart-modal');
     if (!modal) {
-        // Tạo modal với giao diện đẹp
         const modalHtml = `
             <div id="edit-cart-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1001; justify-content:center; align-items:center; font-family:'Montserrat',sans-serif;">
                 <div style="background:#ffffff; border-radius:28px; width:90%; max-width:520px; box-shadow:0 25px 45px -12px rgba(0,0,0,0.3); overflow:hidden; animation:fadeInUp 0.3s ease;">
@@ -249,7 +250,7 @@ function showEditModal(cartId, productId, currentSize, currentColor, currentRent
                             <span id="edit-summary">Số ngày: -- | Cọc: --</span>
                         </div>
                         <div style="display:flex; gap:16px;">
-                            <button id="edit-cancel" class="btn btn-secondary" style="flex:1; background:transparent; border:1.5px solid #cbd5e1; border-radius:40px; padding:12px; font-weight:600; font-family:'Montserrat'; cursor:pointer; color:#dc3545;">Hủy</button>
+                            <button id="edit-cancel" class="btn btn-secondary" style="flex:1; background:transparent; border:1.5px solid #cbd5e1; border-radius:40px; padding:12px; font-weight:600; font-family:'Montserrat'; cursor:pointer;">Hủy</button>
                             <button id="edit-save" class="btn btn-primary" style="flex:1; background:#718BBC; border:none; border-radius:40px; padding:12px; color:white; font-weight:600; font-family:'Montserrat'; cursor:pointer;">Lưu thay đổi</button>
                         </div>
                     </div>
@@ -270,7 +271,6 @@ function showEditModal(cartId, productId, currentSize, currentColor, currentRent
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         modal = document.getElementById('edit-cart-modal');
         
-        // Gắn sự kiện đóng modal
         const closeBtn = document.getElementById('close-modal-btn');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
@@ -300,7 +300,6 @@ function showEditModal(cartId, productId, currentSize, currentColor, currentRent
             modal.style.display = 'none';
         });
         
-        // Đóng khi click ra ngoài modal (background)
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.style.display = 'none';
@@ -308,10 +307,8 @@ function showEditModal(cartId, productId, currentSize, currentColor, currentRent
         });
     }
     
-    // Lấy tên sản phẩm để hiển thị
     const productNameSpan = document.getElementById('edit-product-name');
     if (productNameSpan) {
-        // Tìm tên sản phẩm từ DOM cart-item
         const cartItem = document.querySelector(`.cart-item[data-cart-id="${cartId}"]`);
         if (cartItem) {
             const nameEl = cartItem.querySelector('.product-name');
@@ -322,7 +319,6 @@ function showEditModal(cartId, productId, currentSize, currentColor, currentRent
         }
     }
     
-    // Tải options từ server trước khi hiển thị modal
     fetchProductOptions(productId, (sizes, colors) => {
         const sizeSelect = document.getElementById('edit-size');
         const colorSelect = document.getElementById('edit-color');
@@ -346,44 +342,31 @@ function showEditModal(cartId, productId, currentSize, currentColor, currentRent
         document.getElementById('edit-rent-date').value = currentRentDate;
         document.getElementById('edit-return-date').value = currentReturnDate;
         
-        // Cập nhật summary (số ngày, tiền cọc)
         updateEditSummary(currentRentDate, currentReturnDate, cartId);
         
         modal.style.display = 'flex';
     });
 }
 
-// Hàm tính số ngày và hiển thị cọc
 function updateEditSummary(rentDate, returnDate, cartId) {
     if (!rentDate || !returnDate) return;
-
     const start = new Date(rentDate);
     const end = new Date(returnDate);
     const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-    // Lấy tiền cọc từ thuộc tính data-deposit của phần tử .cart-item
     const cartItem = document.querySelector(`.cart-item[data-cart-id="${cartId}"]`);
     let deposit = 0;
     if (cartItem && cartItem.dataset.deposit) {
         deposit = parseFloat(cartItem.dataset.deposit);
-        // Kiểm tra nếu deposit là số nguyên (60.000) thì giữ nguyên
     } else {
-        // Fallback an toàn: dùng 30% giá sản phẩm (nếu có data-price)
         const price = cartItem ? parseFloat(cartItem.dataset.price) : 0;
-        deposit = price * 0.3;
-        console.warn(`Không tìm thấy data-deposit cho cart ${cartId}, dùng 30% giá sản phẩm = ${deposit}`);
+        deposit = price * 0.5;
     }
-
     const summarySpan = document.getElementById('edit-summary');
     if (summarySpan) {
-        summarySpan.innerHTML = `<i class="fas fa-calendar-week"></i> Số ngày: <strong>${diffDays}</strong> &nbsp;|&nbsp; <i class="fas fa-coins"></i> Cọc: <strong>${deposit.toLocaleString('vi-VN')}đ</strong>`;
+        summarySpan.innerHTML = `<i class="fas fa-calendar-week"></i> Số ngày: <strong>${diffDays}</strong> &nbsp;|&nbsp; <i class="fas fa-coins"></i> Cọc: <strong>${formatMoney(deposit)}đ</strong>`;
     }
-
-    // Gắn sự kiện change cho input ngày để cập nhật lại summary
     const rentInput = document.getElementById('edit-rent-date');
     const returnInput = document.getElementById('edit-return-date');
-    if (!rentInput || !returnInput) return;
-
     const updateSummaryFromInputs = () => {
         const newRent = rentInput.value;
         const newReturn = returnInput.value;
@@ -392,11 +375,10 @@ function updateEditSummary(rentDate, returnDate, cartId) {
             const e = new Date(newReturn);
             const days = Math.ceil((e - s) / (1000 * 3600 * 24)) + 1;
             if (summarySpan) {
-                summarySpan.innerHTML = `<i class="fas fa-calendar-week"></i> Số ngày: <strong>${days}</strong> &nbsp;|&nbsp; <i class="fas fa-coins"></i> Cọc: <strong>${deposit.toLocaleString('vi-VN')}đ</strong>`;
+                summarySpan.innerHTML = `<i class="fas fa-calendar-week"></i> Số ngày: <strong>${days}</strong> &nbsp;|&nbsp; <i class="fas fa-coins"></i> Cọc: <strong>${formatMoney(deposit)}đ</strong>`;
             }
         }
     };
-
     rentInput.removeEventListener('change', updateSummaryFromInputs);
     returnInput.removeEventListener('change', updateSummaryFromInputs);
     rentInput.addEventListener('change', updateSummaryFromInputs);
@@ -404,7 +386,7 @@ function updateEditSummary(rentDate, returnDate, cartId) {
 }
 
 function saveCartItem(cartId, newSize, newColor, newRentDate, newReturnDate) {
-    fetch(BASE_URL + '/api/cart/update-item', {
+    fetch(apiUrl('api/cart/update-item'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -421,15 +403,12 @@ function saveCartItem(cartId, newSize, newColor, newRentDate, newReturnDate) {
             Toast.success('Cập nhật thành công');
             const itemDiv = document.querySelector(`.cart-item[data-cart-id="${cartId}"]`);
             if (itemDiv) {
-                // Cập nhật size/màu
                 const sizeColorSpan = itemDiv.querySelector('.product-size-color');
                 if (sizeColorSpan) sizeColorSpan.innerText = `Size: ${newSize} | Màu: ${newColor}`;
-                // Cập nhật ngày
                 const rentSpan = itemDiv.querySelector('.product-rent-date');
                 const returnSpan = itemDiv.querySelector('.product-return-date');
                 if (rentSpan) rentSpan.innerText = `Ngày thuê: ${newRentDate}`;
                 if (returnSpan) returnSpan.innerText = `Ngày trả: ${newReturnDate}`;
-                // Tính lại số ngày
                 const start = new Date(newRentDate);
                 const end = new Date(newReturnDate);
                 const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
@@ -438,7 +417,6 @@ function saveCartItem(cartId, newSize, newColor, newRentDate, newReturnDate) {
                 itemDiv.dataset.days = diffDays;
                 itemDiv.dataset.rentDate = newRentDate;
                 itemDiv.dataset.returnDate = newReturnDate;
-                // Cập nhật tổng tiền dòng
                 const price = parseFloat(itemDiv.dataset.price);
                 const qtySpan = document.getElementById('qty-' + cartId);
                 const qty = qtySpan ? parseInt(qtySpan.innerText, 10) : 1;
@@ -470,7 +448,6 @@ function handleEditClick(event) {
         Toast.error('Không xác định được sản phẩm');
         return;
     }
-    // Lấy thông tin hiện tại từ các span
     const sizeColorSpan = itemDiv.querySelector('.product-size-color');
     let currentSize = 'M', currentColor = 'Trắng';
     if (sizeColorSpan) {
@@ -512,7 +489,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const checkoutBtn = document.getElementById('checkout-selected');
     if (checkoutBtn) {
         checkoutBtn.addEventListener('click', function() {
-            // Lấy danh sách các sản phẩm được chọn kèm ngày thuê/trả
             const selectedItems = [];
             document.querySelectorAll('.cart-item').forEach(item => {
                 const cb = item.querySelector('.item-select');
@@ -527,7 +503,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 Toast.warning('Vui lòng chọn ít nhất một sản phẩm');
                 return;
             }
-            // Kiểm tra đồng nhất ngày
             const firstStart = selectedItems[0].rentDate;
             const firstEnd = selectedItems[0].returnDate;
             let isValid = true;
@@ -541,7 +516,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 Toast.error('Các sản phẩm được chọn phải có cùng ngày thuê và ngày trả. Vui lòng chỉ chọn các sản phẩm cùng ngày.');
                 return;
             }
-            // Hợp lệ, chuyển sang checkout
             const cartIds = selectedItems.map(item => item.cartId);
             window.location.href = BASE_URL + '/checkout?cart_ids=' + cartIds.join(',');
         });

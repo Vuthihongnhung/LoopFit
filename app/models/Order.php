@@ -14,27 +14,15 @@ class Order extends Model
     // ==================== CREATE ====================
 
     /* ===== Tạo mới một đơn hàng  ===== */
-    private function getNextId() {
-        $sql = "SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM orders";
-        $result = $this->conn->query($sql);
-        if ($result) {
-            $row = $result->fetch_assoc();
-            return (int)($row['next_id'] ?? 1);
-        }
-        return 1;
-    }
-
     public function create($data) {
-        $nextId = $this->getNextId();
         $sql = "INSERT INTO orders 
-                (id, user_id, address_id, rent_date, return_date, total_price, discount_price, shipping_fee, deposit_amount, final_total, payment_method, notes, status, payment_status, deposit_status, payment_expiry, promotion_id, late_fee, late_fee_status, late_fee_paid_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                (user_id, address_id, rent_date, return_date, total_price, discount_price, shipping_fee, deposit_amount, final_total, payment_method, notes, status, payment_status, deposit_status, payment_expiry, promotion_id, late_fee, late_fee_status, late_fee_paid_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
         if (!$stmt) return ['success' => false, 'message' => 'Prepare lỗi: ' . $this->conn->error];
 
         $stmt->bind_param(
-            "iiissdddddssssssidss",
-            $nextId,
+            "iissddddsssssssiisi",
             $data['user_id'],
             $data['address_id'],
             $data['rent_date'],
@@ -57,8 +45,9 @@ class Order extends Model
         );
 
         if ($stmt->execute()) {
+            $id = $this->conn->insert_id;
             $stmt->close();
-            return ['success' => true, 'id' => $nextId];
+            return ['success' => true, 'id' => $id];
         } else {
             $error = $stmt->error;
             $stmt->close();
@@ -410,14 +399,9 @@ class Order extends Model
                 }
             }
 
-            // Cập nhật tồn kho: tăng rented_quantity cho biến thể tương ứng
+            // Cập nhật tồn kho: tăng rented_quantity
             foreach ($items as $item) {
-                $productModel->increaseVariantRentedQuantity(
-                    $item['product_id'],
-                    $item['color'] ?? '',
-                    $item['size'] ?? '',
-                    $item['quantity']
-                );
+                $productModel->increaseRentedQuantity($item['product_id'], $item['quantity']);
             }
 
             // Cập nhật trạng thái đơn hàng
@@ -458,14 +442,9 @@ class Order extends Model
             $productModel = new Product();
 
             if (!$isDamaged) {
-                // Hàng trả bình thường: giảm rented_quantity cho biến thể tương ứng
+                // Hàng trả bình thường: giảm rented_quantity (trả lại kho)
                 foreach ($items as $item) {
-                    $productModel->decreaseVariantRentedQuantity(
-                        $item['product_id'],
-                        $item['color'] ?? '',
-                        $item['size'] ?? '',
-                        $item['quantity']
-                    );
+                    $productModel->decreaseRentedQuantity($item['product_id'], $item['quantity']);
                 }
             } else {
                 // Hàng hư hỏng: không trả lại kho
@@ -509,7 +488,7 @@ class Order extends Model
         $productModel = new \App\Models\Product();
         $this->conn->begin_transaction();
         try {
-            $actualReturnDate = $order['actual_return_date'] ?? date('Y-m-d');
+            $actualReturnDate = date('Y-m-d');
             $sql = "UPDATE orders SET status = 'completed', actual_return_date = ? WHERE id = ?";
             $stmt = $this->conn->prepare($sql);
             $stmt->bind_param('si', $actualReturnDate, $orderId);
@@ -518,21 +497,10 @@ class Order extends Model
             // Chuyển deposit_status sang 'pending_return' để admin có thể hoàn cọc
             $this->updateDepositStatus($orderId, 'pending_return');
 
-            // Tăng rented_count (tổng lượt thuê) cho từng sản phẩm
+            // Tăng rented_count (tổng lượt thuê) và giảm rented_quantity (số đang thuê) cho từng sản phẩm
             foreach ($items as $item) {
                 $productModel->increaseRentedCount($item['product_id'], $item['quantity']);
-            }
-
-            // Nếu admin chưa cập nhật actual_return_date trước đó, giảm rented_quantity bây giờ
-            if (empty($order['actual_return_date'])) {
-                foreach ($items as $item) {
-                    $productModel->decreaseVariantRentedQuantity(
-                        $item['product_id'],
-                        $item['color'] ?? '',
-                        $item['size'] ?? '',
-                        $item['quantity']
-                    );
-                }
+                $productModel->decreaseRentedQuantity($item['product_id'], $item['quantity']);
             }
 
             $this->conn->commit();
@@ -581,12 +549,7 @@ class Order extends Model
         $this->conn->begin_transaction();
         try {
             foreach ($items as $item) {
-                $productModel->decreaseVariantRentedQuantity(
-                    $item['product_id'],
-                    $item['color'] ?? '',
-                    $item['size'] ?? '',
-                    $item['quantity']
-                );
+                $productModel->decreaseRentedQuantity($item['product_id'], $item['quantity']);
             }
             $sql = "UPDATE orders SET status = 'cancelled' WHERE id = ?";
             $stmt = $this->conn->prepare($sql);
@@ -616,4 +579,136 @@ class Order extends Model
     public function getLastError() {
         return $this->conn ? $this->conn->error : 'Không có kết nối database';
     }
+    public function getRevenueDaily($days = 7)
+{
+    $sql = "SELECT DATE(created_at) as date, SUM(final_total) as revenue
+            FROM orders 
+            WHERE status = 'completed' AND payment_status = 'paid'
+              AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param('i', $days);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+
+    $labels = [];
+    $values = [];
+    $date = new \DateTime();
+    $interval = new \DateInterval('P1D');
+    for ($i = $days - 1; $i >= 0; $i--) {
+        $d = (clone $date)->modify("-$i days");
+        $label = $d->format('Y-m-d');
+        $labels[] = $label;
+        $found = false;
+        foreach ($rows as $row) {
+            if ($row['date'] == $label) {
+                $values[] = (float)$row['revenue'];
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) $values[] = 0;
+    }
+    return [
+        'labels' => $labels,
+        'datasets' => [[
+            'label' => 'Doanh thu (VNĐ)',
+            'data' => $values,
+            'backgroundColor' => 'rgba(54, 162, 235, 0.5)',
+            'borderColor' => 'rgba(54, 162, 235, 1)',
+            'borderWidth' => 1
+        ]]
+    ];
+}
+
+public function getRevenueMonthly($months = 12)
+{
+    $sql = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, SUM(final_total) as revenue
+            FROM orders
+            WHERE status = 'completed' AND payment_status = 'paid'
+              AND created_at >= DATE_SUB(NOW(), INTERVAL ? MONTH)
+            GROUP BY month
+            ORDER BY month ASC";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param('i', $months);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+
+    $labels = [];
+    $values = [];
+    $current = new \DateTime();
+    $current->modify('first day of this month');
+    for ($i = $months - 1; $i >= 0; $i--) {
+        $d = (clone $current)->modify("-$i months");
+        $label = $d->format('Y-m');
+        $labels[] = $label;
+        $found = false;
+        foreach ($rows as $row) {
+            if ($row['month'] == $label) {
+                $values[] = (float)$row['revenue'];
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) $values[] = 0;
+    }
+    return [
+        'labels' => $labels,
+        'datasets' => [[
+            'label' => 'Doanh thu (VNĐ)',
+            'data' => $values,
+            'backgroundColor' => 'rgba(255, 99, 132, 0.5)',
+            'borderColor' => 'rgba(255, 99, 132, 1)'
+        ]]
+    ];
+}
+
+public function getRevenueQuarterly()
+{
+    $sql = "SELECT CONCAT(YEAR(created_at), '-Q', QUARTER(created_at)) as quarter, SUM(final_total) as revenue
+            FROM orders
+            WHERE status = 'completed' AND payment_status = 'paid'
+            GROUP BY quarter
+            ORDER BY quarter ASC";
+    $result = $this->conn->query($sql);
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+    $labels = array_column($rows, 'quarter');
+    $values = array_map('floatval', array_column($rows, 'revenue'));
+    return [
+        'labels' => $labels,
+        'datasets' => [[
+            'label' => 'Doanh thu (VNĐ)',
+            'data' => $values,
+            'backgroundColor' => 'rgba(75, 192, 192, 0.5)'
+        ]]
+    ];
+}
+
+public function getRevenueYearly($years = 5)
+{
+    $sql = "SELECT YEAR(created_at) as year, SUM(final_total) as revenue
+            FROM orders
+            WHERE status = 'completed' AND payment_status = 'paid'
+              AND created_at >= DATE_SUB(NOW(), INTERVAL ? YEAR)
+            GROUP BY year
+            ORDER BY year ASC";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bind_param('i', $years);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+    $labels = array_column($rows, 'year');
+    $values = array_map('floatval', array_column($rows, 'revenue'));
+    return [
+        'labels' => $labels,
+        'datasets' => [[
+            'label' => 'Doanh thu (VNĐ)',
+            'data' => $values,
+            'backgroundColor' => 'rgba(153, 102, 255, 0.5)'
+        ]]
+    ];
+}
 }

@@ -11,7 +11,14 @@ $router->get('/home', [App\Controllers\User\HomeController::class, 'index']);
 // Sản phẩm
 $router->get('/products', [App\Controllers\User\ProductController::class, 'index']);
 $router->get('/most-rented', [App\Controllers\User\ProductController::class, 'mostRented']);
+// Chi tiết sản phẩm (cả 2 dạng)
+$router->get('/product/{id}', [App\Controllers\User\ProductController::class, 'show']);
+$router->get('/san-pham/{id}', [App\Controllers\User\ProductController::class, 'show']); // thêm nếu cần
 
+// ... các route khác ...
+
+// Thông báo user (sửa lại)
+$router->get('/notifications', [App\Controllers\User\NotificationController::class, 'index']);
 // Chi tiết sản phẩm
 $router->get('/product/{id}', [App\Controllers\User\ProductController::class, 'show']);
 
@@ -67,6 +74,6 @@ $router->group(['middleware' => [UserMiddleware::class]], function($router) {
     // Đánh giá sản phẩm sau khi đơn hàng hoàn tất
     $router->get('/review/order/{order_id}/product/{product_id}', [App\Controllers\User\ReviewController::class, 'showForm']);
     $router->post('/review/submit', [App\Controllers\User\ReviewController::class, 'submit']);
-
-   
+// Trang danh sách thông báo
+$router->get('/notifications', [App\Controllers\User\NotificationController::class, 'index']);
 });

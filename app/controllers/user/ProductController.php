@@ -116,23 +116,12 @@ class ProductController extends Controller
             echo json_encode(['success' => false, 'message' => 'Sản phẩm không tồn tại']);
             return;
         }
-        $variants = $productModel->getVariantsByProductId($productId);
-        if (!empty($variants)) {
-            $sizes = array_values(array_unique(array_map('trim', array_column($variants, 'size'))));
-            $colors = array_values(array_unique(array_filter(array_map('trim', array_column($variants, 'color')))));
-            echo json_encode([
-                'success' => true,
-                'variants' => $variants,
-                'sizes' => $sizes,
-                'colors' => $colors
-            ]);
-            return;
-        }
+        $sizes = explode(',', $product['sizes'] ?? 'S,M,L,XL');
+        $colors = explode(',', $product['colors'] ?? 'Trắng,Đen,Đỏ');
         echo json_encode([
             'success' => true,
-            'variants' => [],
-            'sizes' => [],
-            'colors' => []
+            'sizes' => array_map('trim', $sizes),
+            'colors' => array_map('trim', $colors)
         ]);
     }
 
@@ -149,9 +138,9 @@ class ProductController extends Controller
         echo json_encode(['success' => false, 'message' => 'Product not found']);
         return;
     }
-    $variants = $productModel->getVariantsByProductId($productId);
-    $sizes = array_values(array_unique(array_filter(array_map('trim', array_column($variants, 'size')))));
-    $colors = array_values(array_unique(array_filter(array_map('trim', array_column($variants, 'color')))));
+    // Giả sử trong bảng products có cột sizes và colors 
+    $sizes = array_map('trim', explode(',', $product['sizes'] ?? 'S,M,L,XL'));
+    $colors = array_map('trim', explode(',', $product['colors'] ?? 'Trắng,Đen,Đỏ'));
     echo json_encode([
         'success' => true,
         'sizes' => $sizes,
@@ -170,15 +159,9 @@ class ProductController extends Controller
         exit;
     }
 
-    $variants = $productModel->getVariantsByProductId($id);
-    $stock = 0;
-    if (!empty($variants)) {
-        $stock = array_sum(array_column($variants, 'stock'));
-    } else {
-        $stock = (int)($product['stock'] ?? 0);
-    }
-
-    $rentedQuantity = $productModel->getCurrentRented($id);
+    // Tính số lượng có sẵn và trạng thái tồn kho
+    $stock = (int)($product['stock'] ?? 0);
+    $rentedQuantity = (int)($product['rented_quantity'] ?? 0);
     $available = $stock - $rentedQuantity;
 
     if ($available > 0) {
@@ -212,7 +195,6 @@ class ProductController extends Controller
 
     $this->view('user/product_detail', [
         'product' => $product,
-        'variants' => $variants,
         'currentPrice' => $currentPrice,
         'relatedProducts' => $related,
         'reviews' => $reviews,
@@ -268,8 +250,6 @@ class ProductController extends Controller
     $rentDate = $_GET['rent_date'] ?? '';
     $returnDate = $_GET['return_date'] ?? '';
     $quantity = (int)($_GET['quantity'] ?? 1);
-    $color = trim($_GET['color'] ?? '');
-    $size = trim($_GET['size'] ?? '');
     
     if (!$productId || !$rentDate || !$returnDate) {
         echo json_encode(['success' => false, 'message' => 'Thiếu thông tin']);
@@ -277,16 +257,7 @@ class ProductController extends Controller
     }
     
     $productModel = new Product();
-    $variants = $productModel->getVariantsByProductId($productId);
-    if (!empty($variants)) {
-        if ($size === '' || $color === '') {
-            echo json_encode(['success' => false, 'message' => 'Vui lòng chọn size và màu sắc']);
-            return;
-        }
-        $available = $productModel->getAvailableQuantity($productId, $rentDate, $returnDate, $color, $size);
-    } else {
-        $available = $productModel->getAvailableQuantity($productId, $rentDate, $returnDate);
-    }
+    $available = $productModel->getAvailableQuantity($productId, $rentDate, $returnDate);
     
     echo json_encode([
         'success' => true,

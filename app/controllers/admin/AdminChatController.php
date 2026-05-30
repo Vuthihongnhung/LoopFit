@@ -70,7 +70,7 @@ class AdminChatController extends Controller
             return;
         }
         
-        $messages = $this->chatModel->getAllMessagesBySession($sessionId);
+        $messages = $this->chatModel->getMessagesBySession($sessionId);
         
         $userMessageIds = [];
         foreach ($messages as $msg) {

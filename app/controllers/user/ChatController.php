@@ -41,7 +41,7 @@ class ChatController extends Controller
         $faqs = $this->faqModel->getAllActive();
         
         // Lấy lịch sử tin nhắn
-        $messages = $this->chatModel->getMessagesBySession($sessionId, $lastId);
+        $messages = $this->chatModel->getMessagesBySession($sessionId);
         
         $this->view('user/chat', [
             'sessionId' => $sessionId,
@@ -89,40 +89,42 @@ class ChatController extends Controller
     }
     
     public function getMessages()
-{
-    header('Content-Type: application/json');
-    
-    $sessionId = $this->getSessionId();
-    $lastId = intval($_GET['last_id'] ?? 0);
-    
-    // Nếu user đã đăng nhập, lấy theo user_id, ngược lại theo session_id
-    if (isset($_SESSION['user']['id'])) {
-        $userId = $_SESSION['user']['id'];
-        $messages = $this->chatModel->getMessagesByUser($userId, $lastId);
-    } else {
-        $messages = $this->chatModel->getMessagesBySession($sessionId, $lastId);
-    }
-    
-    // Đánh dấu tin nhắn admin đã đọc
-    $adminMessageIds = [];
-    foreach ($messages as $msg) {
-        if ($msg['sender_type'] === 'admin' && !$msg['is_read']) {
-            $adminMessageIds[] = $msg['id'];
+    {
+        header('Content-Type: application/json');
+        
+        $sessionId = $this->getSessionId();
+        $lastId = intval($_GET['last_id'] ?? 0);
+        
+        $messages = $this->chatModel->getMessagesBySession($sessionId);
+        
+        $newMessages = [];
+        foreach ($messages as $msg) {
+            if ($msg['id'] > $lastId) {
+                $msg['is_me'] = ($msg['sender_type'] === 'user');
+                $newMessages[] = $msg;
+            }
         }
+        
+        // Đánh dấu tin nhắn admin đã đọc
+        $adminMessageIds = [];
+        foreach ($newMessages as $msg) {
+            if ($msg['sender_type'] === 'admin' && !$msg['is_read']) {
+                $adminMessageIds[] = $msg['id'];
+            }
+        }
+        
+        if (!empty($adminMessageIds)) {
+            $this->chatModel->markAsRead($adminMessageIds);
+        }
+        
+        $lastId = !empty($messages) ? end($messages)['id'] : $lastId;
+        
+        echo json_encode([
+            'success' => true,
+            'messages' => $newMessages,
+            'last_id' => $lastId
+        ]);
     }
-    if (!empty($adminMessageIds)) {
-        $this->chatModel->markAsRead($adminMessageIds);
-    }
-    
-    // Lấy last_id mới nhất
-    $newLastId = !empty($messages) ? end($messages)['id'] : $lastId;
-    
-    echo json_encode([
-        'success' => true,
-        'messages' => $messages,
-        'last_id' => $newLastId
-    ]);
-}
     
     public function searchFaq()
     {
