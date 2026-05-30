@@ -4022,3 +4022,153 @@ a.btn-secondary {
 .sticker-item:hover {
     background: #f0f2f5;
 }
+/* Tăng kích thước modal bulk promotion */
+#bulkPromoModal .modal-content {
+    width: 650px !important;
+    max-width: 95% !important;
+}
+
+#bulkPromoModal .form-group input,
+#bulkPromoModal .form-group select,
+#bulkPromoModal .form-group textarea {
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+}
+
+#bulkPromoModal .form-group label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    margin-bottom: 6px !important;
+}
+/* Thanh cuộn cho modal bulk promotion */
+#bulkPromoModal .modal-content {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+}
+
+#bulkPromoModal .modal-body {
+    max-height: calc(90vh - 120px) !important;
+    overflow-y: auto !important;
+}
+/* Style cho select multiple trong bulk promotion */
+#bulkPromoCategoryId {
+    min-height: 150px !important;
+}
+
+#bulkPromoCategoryId option {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#bulkPromoCategoryId option:checked {
+    background: #2563eb linear-gradient(0deg, #2563eb, #2563eb);
+    color: white;
+}
+/* ===== CẢI THIỆN MODAL MÃ GIẢM GIÁ ===== */
+
+/* Thanh cuộn cho modal */
+#promoModal .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Padding cho nội dung */
+#promoModal .modal-body {
+    padding: 20px 25px !important;
+}
+
+/* Căn chỉnh label */
+#promoModal .form-group label {
+    display: block !important;
+    text-align: left !important;
+    margin-bottom: 8px !important;
+    font-weight: 600 !important;
+}
+
+/* Input full width */
+#promoModal .form-group input,
+#promoModal .form-group select {
+    width: 100% !important;
+    padding: 10px 12px !important;
+    box-sizing: border-box !important;
+}
+
+/* Radio group căn trái */
+#promoModal .discount-type-group {
+    display: flex;
+    gap: 20px;
+    justify-content: flex-start;
+}
+
+/* Form row */
+#promoModal .form-row {
+    display: flex;
+    gap: 16px;
+}
+
+#promoModal .form-row .form-group {
+    flex: 1;
+}
+
+/* Nút bấm */
+#promoModal .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #eef2ff;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    #promoModal .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+/* ===== THANH CUỘN CHO MODAL MÃ GIẢM GIÁ ===== */
+
+/* Modal container - cho phép cuộn */
+#promoModal {
+    overflow-y: auto !important;
+}
+
+/* Nội dung modal - giới hạn chiều cao và cho cuộn */
+#promoModal .modal-content {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    margin: 20px auto !important;
+}
+
+/* Body modal - cuộn khi nội dung dài */
+#promoModal .modal-body {
+    max-height: calc(90vh - 120px) !important;
+    overflow-y: auto !important;
+    padding: 20px 25px !important;
+}
+/* ===== HEADER MÀU XANH CHO MODAL CHƯƠNG TRÌNH KHUYẾN MÃI ===== */
+
+#bulkPromoModal .modal-header {
+    background: linear-gradient(135deg, #1e40af, #2563eb, #3b82f6) !important;
+    padding: 16px 24px !important;
+    border-bottom: none !important;
+}
+
+#bulkPromoModal .modal-header h2 {
+    color: white !important;
+    margin: 0 !important;
+}
+
+#bulkPromoModal .modal-header h2 i {
+    color: white !important;
+}
+
+#bulkPromoModal .modal-header .close {
+    color: white !important;
+    opacity: 0.8 !important;
+}
+
+#bulkPromoModal .modal-header .close:hover {
+    opacity: 1 !important;
+}

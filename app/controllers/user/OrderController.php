@@ -144,12 +144,7 @@ class OrderController extends Controller
                 $items = $this->orderItemModel->getByOrder($orderId);
                 $productModel = new \App\Models\Product();
                 foreach ($items as $item) {
-                    $productModel->decreaseVariantRentedQuantity(
-                        $item['product_id'],
-                        $item['color'] ?? '',
-                        $item['size'] ?? '',
-                        $item['quantity']
-                    );
+                    $productModel->decreaseRentedQuantity($item['product_id'], $item['quantity']);
                 }
             }
             $this->orderModel->updateStatus($orderId, 'cancelled');
@@ -199,10 +194,10 @@ class OrderController extends Controller
             return;
         }
 
-        // Chuyển trạng thái sang 'returning' và giữ để admin cập nhật ngày trả thực tế sau
+        // Chuyển trạng thái sang 'returning'
         $updated = $this->orderModel->updateStatus($orderId, 'returning');
         if ($updated) {
-            echo json_encode(['success' => true, 'message' => 'Yêu cầu hoàn trả đã được gửi. Vui lòng chờ admin cập nhật ngày trả thực tế.']);
+            echo json_encode(['success' => true, 'message' => 'Yêu cầu hoàn trả đã được gửi']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Yêu cầu thất bại, vui lòng thử lại']);
         }

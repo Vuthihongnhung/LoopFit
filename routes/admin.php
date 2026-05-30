@@ -70,6 +70,12 @@ $router->group(['middleware' => [App\Middlewares\AdminMiddleware::class]], funct
     $router->post('/admin/promotions/update', [App\Controllers\Admin\PromotionController::class, 'update']);
     $router->post('/admin/promotions/delete', [App\Controllers\Admin\PromotionController::class, 'delete']);
     
+    // Chương trình khuyến mãi hàng loạt
+    $router->get('/admin/api/bulk-promotions', [App\Controllers\Admin\BulkPromotionController::class, 'apiGetList']);
+    $router->post('/admin/bulk-promotions/store', [App\Controllers\Admin\BulkPromotionController::class, 'store']);
+    $router->post('/admin/bulk-promotions/update', [App\Controllers\Admin\BulkPromotionController::class, 'update']);
+    $router->post('/admin/bulk-promotions/delete', [App\Controllers\Admin\BulkPromotionController::class, 'delete']);
+    
     // ==================== QUẢN LÝ DANH MỤC ====================
     $router->get('/admin/categories', [App\Controllers\Admin\CategoryController::class, 'index']);
     $router->get('/admin/api/categories', [App\Controllers\Admin\CategoryController::class, 'apiGetCategories']);

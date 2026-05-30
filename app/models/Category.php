@@ -9,11 +9,6 @@ class Category extends Model
     public function getAll()
     {
         $result = $this->conn->query("SELECT * FROM categories ORDER BY id");
-        if ($result === false) {
-            error_log('Category::getAll query error: ' . $this->conn->error);
-            return [];
-        }
-
         $categories = [];
         while ($row = $result->fetch_assoc()) {
             $categories[] = $row;
@@ -44,11 +39,6 @@ class Category extends Model
     {
         $sql = "SELECT * FROM categories WHERE parent_id = 0 ORDER BY display_order";
         $result = $this->conn->query($sql);
-        if ($result === false) {
-            error_log('Category::getParents query error: ' . $this->conn->error);
-            return [];
-        }
-
         $parents = [];
         while ($row = $result->fetch_assoc()) {
             $parents[] = $row;

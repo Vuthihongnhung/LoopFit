@@ -63,14 +63,11 @@ let confirmModal = null;
 function initConfirmModal() {
     if (!document.getElementById('confirm-modal')) {
         const modalHtml = `
-           <div id="confirm-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
-                <div style="background:white; padding:24px; border-radius:12px; max-width:400px; width:90%; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
-                    <i class="fas fa-question-circle" style="font-size:48px; color:#f59e0b; margin-bottom:10px;"></i>
-                    <p id="confirm-message" style="font-size:16px; margin-bottom:20px; color:#333;">Bạn có chắc chắn?</p>
-                    <div style="display:flex; gap:12px; justify-content:center;">
-                        <button id="confirm-yes" style="background:#dc3545; color:white; border:none; padding:8px 24px; border-radius:40px; font-weight:600; cursor:pointer;">Có</button>
-                        <button id="confirm-no" style="background:#6c757d; color:white; border:none; padding:8px 24px; border-radius:40px; font-weight:600; cursor:pointer;">Không</button>
-                    </div>
+            <div id="confirm-modal" style="display:none; position:fixed; top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;">
+                <div style="background:white;padding:20px;border-radius:8px;max-width:400px;text-align:center;">
+                    <p id="confirm-message">Bạn có chắc chắn?</p>
+                    <button id="confirm-yes" style="margin:5px;padding:5px 15px;">Có</button>
+                    <button id="confirm-no" style="margin:5px;padding:5px 15px;">Không</button>
                 </div>
             </div>
         `;
@@ -249,7 +246,7 @@ function showEditModal(cartId, productId, currentSize, currentColor, currentRent
                             <span id="edit-summary">Số ngày: -- | Cọc: --</span>
                         </div>
                         <div style="display:flex; gap:16px;">
-                            <button id="edit-cancel" class="btn btn-secondary" style="flex:1; background:transparent; border:1.5px solid #cbd5e1; border-radius:40px; padding:12px; font-weight:600; font-family:'Montserrat'; cursor:pointer; color:#dc3545;">Hủy</button>
+                            <button id="edit-cancel" class="btn btn-secondary" style="flex:1; background:transparent; border:1.5px solid #cbd5e1; border-radius:40px; padding:12px; font-weight:600; font-family:'Montserrat'; cursor:pointer;">Hủy</button>
                             <button id="edit-save" class="btn btn-primary" style="flex:1; background:#718BBC; border:none; border-radius:40px; padding:12px; color:white; font-weight:600; font-family:'Montserrat'; cursor:pointer;">Lưu thay đổi</button>
                         </div>
                     </div>
@@ -356,34 +353,26 @@ function showEditModal(cartId, productId, currentSize, currentColor, currentRent
 // Hàm tính số ngày và hiển thị cọc
 function updateEditSummary(rentDate, returnDate, cartId) {
     if (!rentDate || !returnDate) return;
-
     const start = new Date(rentDate);
     const end = new Date(returnDate);
     const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-    // Lấy tiền cọc từ thuộc tính data-deposit của phần tử .cart-item
+    // Lấy tiền cọc từ data-cart hoặc API
     const cartItem = document.querySelector(`.cart-item[data-cart-id="${cartId}"]`);
     let deposit = 0;
     if (cartItem && cartItem.dataset.deposit) {
         deposit = parseFloat(cartItem.dataset.deposit);
-        // Kiểm tra nếu deposit là số nguyên (60.000) thì giữ nguyên
     } else {
-        // Fallback an toàn: dùng 30% giá sản phẩm (nếu có data-price)
+        // Nếu không có, thử lấy từ giá sản phẩm * 0.5 
         const price = cartItem ? parseFloat(cartItem.dataset.price) : 0;
-        deposit = price * 0.3;
-        console.warn(`Không tìm thấy data-deposit cho cart ${cartId}, dùng 30% giá sản phẩm = ${deposit}`);
+        deposit = price * 0.5;
     }
-
     const summarySpan = document.getElementById('edit-summary');
     if (summarySpan) {
-        summarySpan.innerHTML = `<i class="fas fa-calendar-week"></i> Số ngày: <strong>${diffDays}</strong> &nbsp;|&nbsp; <i class="fas fa-coins"></i> Cọc: <strong>${deposit.toLocaleString('vi-VN')}đ</strong>`;
+        summarySpan.innerHTML = `<i class="fas fa-calendar-week"></i> Số ngày: <strong>${diffDays}</strong> &nbsp;|&nbsp; <i class="fas fa-coins"></i> Cọc: <strong>${formatMoney(deposit)}đ</strong>`;
     }
-
-    // Gắn sự kiện change cho input ngày để cập nhật lại summary
+    // Gắn sự kiện change cho date để cập nhật summary
     const rentInput = document.getElementById('edit-rent-date');
     const returnInput = document.getElementById('edit-return-date');
-    if (!rentInput || !returnInput) return;
-
     const updateSummaryFromInputs = () => {
         const newRent = rentInput.value;
         const newReturn = returnInput.value;
@@ -392,11 +381,10 @@ function updateEditSummary(rentDate, returnDate, cartId) {
             const e = new Date(newReturn);
             const days = Math.ceil((e - s) / (1000 * 3600 * 24)) + 1;
             if (summarySpan) {
-                summarySpan.innerHTML = `<i class="fas fa-calendar-week"></i> Số ngày: <strong>${days}</strong> &nbsp;|&nbsp; <i class="fas fa-coins"></i> Cọc: <strong>${deposit.toLocaleString('vi-VN')}đ</strong>`;
+                summarySpan.innerHTML = `<i class="fas fa-calendar-week"></i> Số ngày: <strong>${days}</strong> &nbsp;|&nbsp; <i class="fas fa-coins"></i> Cọc: <strong>${formatMoney(deposit)}đ</strong>`;
             }
         }
     };
-
     rentInput.removeEventListener('change', updateSummaryFromInputs);
     returnInput.removeEventListener('change', updateSummaryFromInputs);
     rentInput.addEventListener('change', updateSummaryFromInputs);

@@ -40,34 +40,40 @@ class ProductController extends Controller
 
     // Lọc sản phẩm giảm giá
     if ($filter === 'discount') {
-        $products = $productModel->getDiscountedProducts();
-        $this->view('user/products', [
-            'products'       => $products,
-            'current_gender' => $gender,
-            'current_price'  => $priceRange,
-            'current_cat'    => $categoryId,
-            'breadcrumb'     => [],
-            'searchKeyword'  => '',
-            'isDiscountPage' => true
-        ]);
-        return;
+    $products = $productModel->getDiscountedProducts();
+    foreach ($products as &$p) {
+        $p['final_price'] = $productModel->getFinalPrice($p['id'], $p['price'], $p['category_id'] ?? null);
     }
+    $this->view('user/products', [
+        'products'       => $products,
+        'current_gender' => $gender,
+        'current_price'  => $priceRange,
+        'current_cat'    => $categoryId,
+        'breadcrumb'     => [],
+        'searchKeyword'  => '',
+        'isDiscountPage' => true
+    ]);
+    return;
+}
 
     // Lọc sản phẩm mới (hàng mới về)
     if ($filter === 'new') {
-        $products = $productModel->getNewProducts();
-        $this->view('user/products', [
-            'products'       => $products,
-            'current_gender' => $gender,
-            'current_price'  => $priceRange,
-            'current_cat'    => $categoryId,
-            'breadcrumb'     => [],
-            'searchKeyword'  => '',
-            'isDiscountPage' => false,
-            'isNewPage'      => true
-        ]);
-        return;
+    $products = $productModel->getNewProducts();
+    foreach ($products as &$p) {
+        $p['final_price'] = $productModel->getFinalPrice($p['id'], $p['price'], $p['category_id'] ?? null);
     }
+    $this->view('user/products', [
+        'products'       => $products,
+        'current_gender' => $gender,
+        'current_price'  => $priceRange,
+        'current_cat'    => $categoryId,
+        'breadcrumb'     => [],
+        'searchKeyword'  => '',
+        'isDiscountPage' => false,
+        'isNewPage'      => true
+    ]);
+    return;
+}
 
     // Lọc theo danh mục (bao gồm cả danh mục con)
     $categoryIds = [];
@@ -84,6 +90,11 @@ class ProductController extends Controller
     } else {
         $products = $productModel->filterProducts(null, $gender, $priceRange, $sort);
     }
+
+    // Tính giá sau bulk promotion cho từng sản phẩm
+foreach ($products as &$p) {
+    $p['final_price'] = $productModel->getFinalPrice($p['id'], $p['price'], $p['category_id'] ?? null);
+}
 
     // Tạo breadcrumb (đường dẫn điều hướng) cho danh mục
     $breadcrumb = [];
@@ -116,23 +127,12 @@ class ProductController extends Controller
             echo json_encode(['success' => false, 'message' => 'Sản phẩm không tồn tại']);
             return;
         }
-        $variants = $productModel->getVariantsByProductId($productId);
-        if (!empty($variants)) {
-            $sizes = array_values(array_unique(array_map('trim', array_column($variants, 'size'))));
-            $colors = array_values(array_unique(array_filter(array_map('trim', array_column($variants, 'color')))));
-            echo json_encode([
-                'success' => true,
-                'variants' => $variants,
-                'sizes' => $sizes,
-                'colors' => $colors
-            ]);
-            return;
-        }
+        $sizes = explode(',', $product['sizes'] ?? 'S,M,L,XL');
+        $colors = explode(',', $product['colors'] ?? 'Trắng,Đen,Đỏ');
         echo json_encode([
             'success' => true,
-            'variants' => [],
-            'sizes' => [],
-            'colors' => []
+            'sizes' => array_map('trim', $sizes),
+            'colors' => array_map('trim', $colors)
         ]);
     }
 
@@ -149,9 +149,9 @@ class ProductController extends Controller
         echo json_encode(['success' => false, 'message' => 'Product not found']);
         return;
     }
-    $variants = $productModel->getVariantsByProductId($productId);
-    $sizes = array_values(array_unique(array_filter(array_map('trim', array_column($variants, 'size')))));
-    $colors = array_values(array_unique(array_filter(array_map('trim', array_column($variants, 'color')))));
+    // Giả sử trong bảng products có cột sizes và colors 
+    $sizes = array_map('trim', explode(',', $product['sizes'] ?? 'S,M,L,XL'));
+    $colors = array_map('trim', explode(',', $product['colors'] ?? 'Trắng,Đen,Đỏ'));
     echo json_encode([
         'success' => true,
         'sizes' => $sizes,
@@ -170,15 +170,9 @@ class ProductController extends Controller
         exit;
     }
 
-    $variants = $productModel->getVariantsByProductId($id);
-    $stock = 0;
-    if (!empty($variants)) {
-        $stock = array_sum(array_column($variants, 'stock'));
-    } else {
-        $stock = (int)($product['stock'] ?? 0);
-    }
-
-    $rentedQuantity = $productModel->getCurrentRented($id);
+    // Tính số lượng có sẵn và trạng thái tồn kho
+    $stock = (int)($product['stock'] ?? 0);
+    $rentedQuantity = (int)($product['rented_quantity'] ?? 0);
     $available = $stock - $rentedQuantity;
 
     if ($available > 0) {
@@ -189,12 +183,23 @@ class ProductController extends Controller
         $stockStatus = 'outofstock';   // Hết hàng (stock = 0)
     }
 
-    // Tính giá hiện tại sau giảm giá
+    // Tính giá hiện tại (ưu tiên bulk promotion trước)
+$bulkPrice = $productModel->getFinalPrice($id, $product['price'], $product['category_id'] ?? null);
+$discountPercent = (int)($product['discount_percent'] ?? 0);
+$hasBulkDiscount = false;
+
+if ($bulkPrice != $product['price']) {
+    // Có bulk promotion
+    $currentPrice = $bulkPrice;
+    $hasBulkDiscount = true;
+} elseif ($discountPercent > 0) {
+    // Chỉ có discount_percent
+    $currentPrice = $product['price'] * (100 - $discountPercent) / 100;
+    $hasBulkDiscount = false;
+} else {
     $currentPrice = $product['price'];
-    $discountPercent = (int)($product['discount_percent'] ?? 0);
-    if ($discountPercent > 0) {
-        $currentPrice = $product['price'] * (100 - $discountPercent) / 100;
-    }
+    $hasBulkDiscount = false;
+}
 
     $related = [];
     if (!empty($product['category_id'])) {
@@ -211,43 +216,49 @@ class ProductController extends Controller
     }
 
     $this->view('user/product_detail', [
-        'product' => $product,
-        'variants' => $variants,
-        'currentPrice' => $currentPrice,
-        'relatedProducts' => $related,
-        'reviews' => $reviews,
-        'userCanReview' => $userCanReview,
-        'available' => $available,           
-        'stockStatus' => $stockStatus        
-    ]);
+    'product' => $product,
+    'currentPrice' => $currentPrice,
+    'hasBulkDiscount' => $hasBulkDiscount,
+    'bulkDiscountPercent' => $hasBulkDiscount ? round((1 - $currentPrice / $product['price']) * 100) : 0,
+    'relatedProducts' => $related,
+    'reviews' => $reviews,
+    'userCanReview' => $userCanReview,
+    'available' => $available,           
+    'stockStatus' => $stockStatus        
+]);
     }
 
     /* ===== API: Lọc sản phẩm và trả về JSON ===== */
     public function filterApi()
-    {
-        $categoryId = $_GET['category'] ?? null;
-        $gender = $_GET['gender'] ?? 'all';
-        $price = $_GET['price'] ?? 'all';
-        $sort = $_GET['sort'] ?? 'default';
-        $search = $_GET['search'] ?? '';
+{
+    $categoryId = $_GET['category'] ?? null;
+    $gender = $_GET['gender'] ?? 'all';
+    $price = $_GET['price'] ?? 'all';
+    $sort = $_GET['sort'] ?? 'default';
+    $search = $_GET['search'] ?? '';
 
-        $productModel = new Product();
-        $categoryModel = new \App\Models\Category();
+    $productModel = new Product();
+    $categoryModel = new \App\Models\Category();
 
-        $categoryIds = [];
-        if ($categoryId) {
-            $categoryIds = $categoryModel->getAllDescendants($categoryId);
-            if (empty($categoryIds)) {
-                $categoryIds = [$categoryId];
-            }
+    $categoryIds = [];
+    if ($categoryId) {
+        $categoryIds = $categoryModel->getAllDescendants($categoryId);
+        if (empty($categoryIds)) {
+            $categoryIds = [$categoryId];
         }
-
-        $products = $productModel->filterProducts($categoryIds, $gender, $price, $sort, $search);
-
-        header('Content-Type: application/json');
-        echo json_encode($products);
-        exit;
     }
+
+    $products = $productModel->filterProducts($categoryIds, $gender, $price, $sort, $search);
+
+    // Tính final_price cho từng sản phẩm
+    foreach ($products as &$p) {
+        $p['final_price'] = $productModel->getFinalPrice($p['id'], $p['price'], $p['category_id'] ?? null);
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode($products);
+    exit;
+}
 
     /* ===== API: Tìm kiếm sản phẩm theo từ khóa (dùng cho dropdown search) ===== */
     public function searchApi()
@@ -268,8 +279,6 @@ class ProductController extends Controller
     $rentDate = $_GET['rent_date'] ?? '';
     $returnDate = $_GET['return_date'] ?? '';
     $quantity = (int)($_GET['quantity'] ?? 1);
-    $color = trim($_GET['color'] ?? '');
-    $size = trim($_GET['size'] ?? '');
     
     if (!$productId || !$rentDate || !$returnDate) {
         echo json_encode(['success' => false, 'message' => 'Thiếu thông tin']);
@@ -277,16 +286,7 @@ class ProductController extends Controller
     }
     
     $productModel = new Product();
-    $variants = $productModel->getVariantsByProductId($productId);
-    if (!empty($variants)) {
-        if ($size === '' || $color === '') {
-            echo json_encode(['success' => false, 'message' => 'Vui lòng chọn size và màu sắc']);
-            return;
-        }
-        $available = $productModel->getAvailableQuantity($productId, $rentDate, $returnDate, $color, $size);
-    } else {
-        $available = $productModel->getAvailableQuantity($productId, $rentDate, $returnDate);
-    }
+    $available = $productModel->getAvailableQuantity($productId, $rentDate, $returnDate);
     
     echo json_encode([
         'success' => true,

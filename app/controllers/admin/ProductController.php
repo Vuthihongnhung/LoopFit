@@ -91,11 +91,7 @@ class ProductController extends Controller
         if (!$product) {
             return $this->json(['success' => false, 'error' => 'Sản phẩm không tồn tại']);
         }
-        $variants = $this->productModel->getVariantsByProductId($id);
-        if (!empty($variants)) {
-            $product['stock'] = $this->productModel->getTotalStockByProductId($id);
-        }
-        $product['variants'] = $variants;
+        // Đảm bảo trả về cấu trúc {success: true, data: product}
         return $this->json(['success' => true, 'data' => $product]);
     }
 
@@ -117,23 +113,14 @@ class ProductController extends Controller
         }
 
         $rented_count = (int)($_POST['rented_count'] ?? 0);
-        $variants = $this->parseVariantsFromRequest();
-
-        if (!empty($variants)) {
-            $data['stock'] = array_sum(array_column($variants, 'stock'));
-        }
 
         $result = $this->productModel->create(
             $data['name'], $data['price'], $data['discount_percent'], $data['deposit_price'],
             $data['description'], $imageNames, $data['stock'], $data['category_id'],
-            $data['gender'], $rented_count
+            $data['sizes'], $data['colors'], $data['gender'], $rented_count
         );
 
         if ($result) {
-            $productId = $this->productModel->getConnection()->insert_id;
-            if (!empty($variants)) {
-                $this->productModel->saveVariants($productId, $variants);
-            }
             return $this->json(['success' => true, 'message' => 'Thêm sản phẩm thành công']);
         } else {
             return $this->json(['success' => false, 'error' => 'Thêm thất bại']);
@@ -174,12 +161,6 @@ class ProductController extends Controller
         $finalImages = $newImages !== '' ? $newImages : $oldImages;
         $rented_count = (int)($_POST['rented_count'] ?? 0);
 
-        $variants = $this->parseVariantsFromRequest();
-
-        if (!empty($variants)) {
-            $data['stock'] = array_sum(array_column($variants, 'stock'));
-        }
-
         // Cập nhật sản phẩm
         $result = $this->productModel->update(
             $id,
@@ -191,14 +172,13 @@ class ProductController extends Controller
             $finalImages,
             $data['stock'],        
             $data['category_id'],
+            $data['sizes'],
+            $data['colors'],
             $data['gender'],
             $rented_count
         );
 
         if ($result) {
-            if (!empty($variants)) {
-                $this->productModel->saveVariants($id, $variants);
-            }
             return $this->json(['success' => true, 'message' => 'Cập nhật sản phẩm thành công']);
         } else {
             // Lấy lỗi từ model nếu có
@@ -247,7 +227,7 @@ class ProductController extends Controller
      * Lấy danh sách sản phẩm kèm thông tin:
      * - image_url (đường dẫn đầy đủ ảnh đầu tiên)
      * - parent_category_id
-     * - current_rented (số lượng đang thuê tính từ tổng rented_quantity của các biến thể)
+     * - current_rented (số lượng đang thuê tính từ các đơn hàng thực tế)
      * - stock_available (stock - current_rented)
      */
     private function getProductsWithExtraInfo()
@@ -275,7 +255,10 @@ class ProductController extends Controller
             $p['parent_category_id'] = $catParentMap[$p['category_id']] ?? 0;
 
             // DÙNG rented_quantity có sẵn (đã được cập nhật khi xác nhận/trả hàng)
-            $p['current_rented'] = max(0, (int)($p['current_rented'] ?? 0));
+            $p['current_rented'] = (int)($p['rented_quantity'] ?? 0);
+            $p['stock_available'] = $p['stock'] - $p['current_rented'];
+
+            $p['current_rented'] = max(0, (int)($p['rented_quantity'] ?? 0));
             $p['stock_available'] = max(0, $p['stock'] - $p['current_rented']);
         }
         return $products;
@@ -293,6 +276,8 @@ class ProductController extends Controller
         $category_id = (int)($_POST['category_id'] ?? 0);
         $description = $_POST['description'] ?? '';
         $stock = (int)($_POST['stock'] ?? 0);
+        $sizes = isset($_POST['sizes']) ? (is_array($_POST['sizes']) ? implode(',', $_POST['sizes']) : $_POST['sizes']) : '';
+        $colors = isset($_POST['colors']) ? (is_array($_POST['colors']) ? implode(',', $_POST['colors']) : $_POST['colors']) : '';
         $gender = $_POST['gender'] ?? 'unisex';
 
         if ($name === '' || $price <= 0 || $category_id <= 0) {
@@ -317,33 +302,10 @@ class ProductController extends Controller
             'category_id' => $category_id,
             'description' => $description,
             'stock' => $stock,
+            'sizes' => $sizes,
+            'colors' => $colors,
             'gender' => $gender
         ];
-    }
-
-    private function parseVariantsFromRequest()
-    {
-        $colors = $_POST['variant_color'] ?? [];
-        $sizes = $_POST['variant_size'] ?? [];
-        $stocks = $_POST['variant_stock'] ?? [];
-        $variants = [];
-
-        $count = max(count($colors), count($sizes), count($stocks));
-        for ($i = 0; $i < $count; $i++) {
-            $color = trim($colors[$i] ?? '');
-            $size = trim($sizes[$i] ?? '');
-            $stock = (int)($stocks[$i] ?? 0);
-            if ($color === '' || $size === '') {
-                continue;
-            }
-            $variants[] = [
-                'color' => $color,
-                'size' => $size,
-                'stock' => max(0, $stock)
-            ];
-        }
-
-        return $variants;
     }
 
     /**

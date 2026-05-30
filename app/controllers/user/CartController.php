@@ -46,15 +46,12 @@ class CartController extends Controller
             return $this->jsonResponse(['success' => false, 'message' => 'Sản phẩm không tồn tại'], 404);
         }
 
-        // Tính giá thực tế sau giảm
-        $price = (float)$product['price'];
-        $discount = (int)($product['discount_percent'] ?? 0);
-        if ($discount > 0) {
-            $price = $price * (100 - $discount) / 100;
-        }
+        // Tính giá thực tế sau giảm (ưu tiên bulk promotion)
+        $originalPrice = (float)$product['price'];
+        $price = $productModel->getFinalPrice($productId, $originalPrice, $product['category_id'] ?? null);
 
         $cartModel = new Cart();
-        $result = $cartModel->addItem($userId, $productId, $size, $color, $rentDate, $returnDate, $quantity, $price);
+        $result = $cartModel->addItem($userId, $productId, $size, $color, $rentDate, $returnDate, $quantity, $price, $originalPrice);
         if ($result) {
             $totalItems = $cartModel->countByUser($userId);
             return $this->jsonResponse(['success' => true, 'message' => 'Đã thêm vào giỏ', 'cartCount' => $totalItems]);
