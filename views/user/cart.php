@@ -46,6 +46,7 @@
                          data-cart-id="<?= $cartId ?>"
                          data-price="<?= $price ?>"
                          data-days="<?= $days ?>"
+                         data-deposit="<?= $depositPerItem ?>" 
                          data-deposit-price="<?= $depositPerItem ?>"
                          data-rent-date="<?= htmlspecialchars($rentDate) ?>"
                          data-return-date="<?= htmlspecialchars($returnDate) ?>"

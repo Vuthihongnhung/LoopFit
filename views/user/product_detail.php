@@ -15,11 +15,42 @@ $deposit = $product['deposit_price'] ?? ($product['price'] * 0.3);
 $hasDiscount = ($product['discount_percent'] ?? 0) > 0;
 $discountPercent = (int)($product['discount_percent'] ?? 0);
 
+// Biến thể sản phẩm
+$variants = $variants ?? [];
+$sizes = [];
+$colors = [];
+foreach ($variants as $variant) {
+    $size = trim($variant['size'] ?? '');
+    $color = trim($variant['color'] ?? '');
+    if ($size !== '') {
+        $sizes[$size] = $size;
+    }
+    if ($color !== '') {
+        $colors[$color] = $color;
+    }
+}
+$sizes = array_values($sizes);
+$colors = array_values($colors);
+
+// Tạo bản đồ biến thể: size => [color => available]
+$variantMap = [];
+foreach ($variants as $v) {
+    $s = trim($v['size'] ?? '');
+    $c = trim($v['color'] ?? '');
+    if ($s === '' || $c === '') continue;
+    $available = null;
+    if (isset($v['available'])) $available = (int)$v['available'];
+    elseif (isset($v['stock'])) $available = max(0, (int)$v['stock']);
+    else $available = 0;
+    if (!isset($variantMap[$s])) $variantMap[$s] = [];
+    $variantMap[$s][$c] = $available;
+}
+
 // Chuẩn bị mảng ảnh URL đầy đủ để truyền sang JS
 $imageUrls = array_map('getProductImageUrl', $images);
 ?>
 
-<div class="product-detail-v2" data-product-id="<?= (int)$product['id'] ?>" data-images='<?= json_encode($imageUrls) ?>'>
+<div class="product-detail-v2" data-product-id="<?= (int)$product['id'] ?>" data-images='<?= json_encode($imageUrls) ?>' data-variants='<?= htmlspecialchars(json_encode($variantMap), ENT_QUOTES, 'UTF-8') ?>'>
     <div class="product-detail-v2__container">
         <!-- Cột trái: Ảnh -->
         <div class="product-detail-v2__gallery">
@@ -84,13 +115,13 @@ $imageUrls = array_map('getProductImageUrl', $images);
             <div class="size-section">
                 <div class="section-title">Kích thước</div>
                 <div class="size-options">
-                    <?php 
-                        $raw_sizes = !empty($product['sizes']) ? $product['sizes'] : 'S,M,L';
-                        $size_array = array_filter(array_map('trim', explode(',', $raw_sizes)));
-                        foreach ($size_array as $s): 
-                    ?>
-                        <button type="button" class="size-btn" data-size="<?= htmlspecialchars($s) ?>"><?= htmlspecialchars($s) ?></button>
-                    <?php endforeach; ?>
+                    <?php if (!empty($sizes)): ?>
+                        <?php foreach ($sizes as $s): ?>
+                            <button type="button" class="size-btn" data-size="<?= htmlspecialchars($s) ?>"><?= htmlspecialchars($s) ?></button>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <span class="no-options">Chưa có kích thước</span>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -98,16 +129,15 @@ $imageUrls = array_map('getProductImageUrl', $images);
             <div class="color-section">
                 <span class="color-title">Màu sắc</span>
                 <div class="color-options">
-                    <?php 
-                    $colorsRaw = $product['colors'] ?? '';
-                    $colorArray = array_filter(array_map('trim', explode(',', $colorsRaw)));
-                    if (empty($colorArray)) $colorArray = ['Đen', 'Trắng', 'Xám'];
-                    foreach ($colorArray as $color):
-                    ?>
-                        <button type="button" class="color-btn" data-color="<?= htmlspecialchars($color) ?>">
-                            <?= htmlspecialchars($color) ?>
-                        </button>
-                    <?php endforeach; ?>
+                    <?php if (!empty($colors)): ?>
+                        <?php foreach ($colors as $color): ?>
+                            <button type="button" class="color-btn" data-color="<?= htmlspecialchars($color) ?>">
+                                <?= htmlspecialchars($color) ?>
+                            </button>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <span class="no-options">Chưa có màu sắc</span>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -137,7 +167,7 @@ $imageUrls = array_map('getProductImageUrl', $images);
             </div>
 
             <div class="action-buttons">
-                <button class="btn-add-to-cart" id="addToCartBtn" disabled>
+                <button class="btn-add-to-cart" id="addToCartBtn">
                     Thêm vào giỏ hàng
                 </button>
             </div>

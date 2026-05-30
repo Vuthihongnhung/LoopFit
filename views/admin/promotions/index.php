@@ -37,7 +37,7 @@ $activeMenu = 'promotions';
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td colspan="11" style="text-align: center;">📦 Đang tải...<\/tr>
+                    <tr><td colspan="11" style="text-align: center;">📦 Đang tải...</tr>
                 </tbody>
             </table>
         </div>

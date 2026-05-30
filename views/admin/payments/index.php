@@ -71,7 +71,7 @@ $activeMenu = 'payments';
                     </tr>
                 </thead>
                 <tbody id="paymentsTableBody">
-                    <tr><td colspan="8" style="text-align: center;">Đang tải...<\/td><\/tr>
+                    <tr><td colspan="8" style="text-align: center;">Đang tải...</td></tr>
                 </tbody>
             </table>
         </div>

@@ -61,8 +61,7 @@ $baseUrl = BASE_URL ?? '/LoopFit/public';
                             <th>Trạng thái</th>
                             <th>Danh mục</th>
                             <th>Giới tính</th>
-                            <th>Màu sắc</th>
-                            <th>Kích thước</th>
+                            <th>Chi tiết kho</th>
                             <th>Số lần thuê</th>
                             <th>Thao tác</th>
                         </tr>
@@ -115,8 +114,11 @@ $baseUrl = BASE_URL ?? '/LoopFit/public';
                                     </td>
                                     <td><?= htmlspecialchars($product['category_name'] ?? '') ?></td>
                                     <td><?= ucfirst($product['gender'] ?? 'unisex') ?></td>
-                                    <td><?= htmlspecialchars($product['colors'] ?? '') ?></td>
-                                    <td><?= htmlspecialchars($product['sizes'] ?? '') ?></td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-info view-stock-details" data-id="<?= $product['id'] ?>" title="Chi tiết kho">
+                                            👁 Chi tiết kho
+                                        </button>
+                                    </td>
                                     <td><?= (int)($product['rented_count'] ?? 0) ?></td>
                                     <td class="actions">
                                         <a href="<?= $baseUrl ?>/admin/products/edit?id=<?= $product['id'] ?>" class="btn btn-sm btn-warning" title="Sửa">
@@ -129,11 +131,39 @@ $baseUrl = BASE_URL ?? '/LoopFit/public';
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <tr><td colspan="16" class="text-center">Chưa có sản phẩm nào.</td></tr>
+                            <tr><td colspan="15" class="text-center">Chưa có sản phẩm nào.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</div>
+
+<div id="inventoryModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Chi tiết tồn kho</h3>
+            <button type="button" id="closeInventoryModal" class="btn-close">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="inventoryProductName" style="margin-bottom:10px;font-weight:700;color:#111827;"></div>
+            <div class="table-responsive">
+                <table class="data-table" id="inventoryDetailTable" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th>Màu sắc</th>
+                            <th>Kích thước</th>
+                            <th>Tồn kho</th>
+                            <th>Đang thuê</th>
+                            <th>Còn lại</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <p id="inventoryTotal" style="margin-top:12px;font-weight:700;color:#111827;"></p>
         </div>
     </div>
 </div>
@@ -143,10 +173,81 @@ $baseUrl = BASE_URL ?? '/LoopFit/public';
 .status-rented { color: #f59e0b; font-weight: 600; }
 .status-outstock { color: #ef4444; font-weight: 600; }
 .stock-badge, .rented-badge { font-size: 11px; font-weight: normal; color: #6b7280; }
+.view-stock-details {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    min-width: 120px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    background-color: #38bdf8;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.view-stock-details:hover {
+    background-color: #0ea5e9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.18);
+}
+.view-stock-details:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2);
+}
 .table-responsive { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th, .data-table td { padding: 10px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
 .data-table th { background-color: #f9fafb; font-weight: 600; }
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+.modal-card {
+    width: min(760px, 100%);
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 30px 60px rgba(15, 23, 42, 0.2);
+    overflow: hidden;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #111827;
+}
+.btn-close {
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 999px;
+    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+}
+.modal-body {
+    padding: 18px 24px 24px;
+}
+.modal-body .data-table th,
+.modal-body .data-table td {
+    padding: 10px 12px;
+}
 </style>
 
 <script>
@@ -198,5 +299,26 @@ document.addEventListener('DOMContentLoaded', function() {
             filterTable();
         });
     }
+
+    const inventoryModal = document.getElementById('inventoryModal');
+    const closeInventoryModal = document.getElementById('closeInventoryModal');
+    const inventoryTableBody = document.querySelector('#inventoryDetailTable tbody');
+    const inventoryTotal = document.getElementById('inventoryTotal');
+    const inventoryProductName = document.getElementById('inventoryProductName');
+
+    function openInventoryModal() {
+        inventoryModal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        inventoryModal.style.display = 'none';
+    }
+
+    closeInventoryModal.addEventListener('click', closeModal);
+    inventoryModal.addEventListener('click', (event) => {
+        if (event.target === inventoryModal) {
+            closeModal();
+        }
+    });
 });
 </script>
