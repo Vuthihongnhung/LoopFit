@@ -90,10 +90,15 @@ $imageUrls = array_map('getProductImageUrl', $images);
             <div class="product-price">
                 <span class="current-price"><?= number_format($currentPrice, 0, ',', '.') ?>đ</span>
                 <span class="unit">/ ngày</span>
-                <?php if ($hasDiscount): ?>
+                
+                <?php if ($hasBulkDiscount ?? false): ?>
                     <del class="old-price"><?= number_format($product['price'], 0, ',', '.') ?>đ</del>
-                    <span class="discount-badge">-<?= $discountPercent ?>%</span>
+                    <span class="discount-badge bulk">🔥 Giảm hàng loạt -<?= $bulkDiscountPercent ?>%</span>
+                <?php elseif (($product['discount_percent'] ?? 0) > 0): ?>
+                    <del class="old-price"><?= number_format($product['price'], 0, ',', '.') ?>đ</del>
+                    <span class="discount-badge">-<?= (int)($product['discount_percent'] ?? 0) ?>%</span>
                 <?php endif; ?>
+                
                 <div class="deposit">Tiền đặt cọc: <?= number_format($deposit, 0, ',', '.') ?>đ</div>
             </div>
             

@@ -329,7 +329,7 @@ $baseUrl = BASE_URL ?? '/LoopFit/public';
                     </div>
                     <div class="form-group">
                         <label>Số lần thuê</label>
-                        <input type="number" name="rented_count" value="0">
+                        <input type="number" value="0" readonly class="form-control" style="background:#f8f9fa; cursor:not-allowed;">
                     </div>
                 </div>
                 

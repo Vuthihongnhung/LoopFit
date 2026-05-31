@@ -17,7 +17,7 @@
         </div>
         <div class="session-items" id="sessionList">
             <?php foreach ($sessions as $session): ?>
-            <div class="session-item" data-session="<?= htmlspecialchars($session['session_id']) ?>">
+            <div class="session-item" data-session="<?= htmlspecialchars($session['session_id']) ?>" data-user-id="<?= htmlspecialchars($session['user_id'] ?? '') ?>" data-user-name="<?= htmlspecialchars($session['user_name'] ?? '') ?>">
                 <div class="session-info" style="display: flex; justify-content: space-between; align-items: center;">
     <span class="session-id">
         <?php if (!empty($session['user_name'])): ?>

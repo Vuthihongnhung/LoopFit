@@ -73,7 +73,14 @@
                             </div>
                         </div>
                         
-                        <div class="col-price"><?= number_format($price, 0, ',', '.') ?>đ <small>/ngày</small></div>
+                        <div class="col-price">
+                            <?php if (isset($item['original_price']) && $item['original_price'] != $price): ?>
+                                <del class="old-price"><?= number_format($item['original_price'], 0, ',', '.') ?>đ</del><br>
+                                <span class="new-price"><?= number_format($price, 0, ',', '.') ?>đ</span> <small>/ngày</small>
+                            <?php else: ?>
+                                <?= number_format($price, 0, ',', '.') ?>đ <small>/ngày</small>
+                            <?php endif; ?>
+                        </div>
                         
                         <div class="col-qty">
                             <div class="cart-quantity">
