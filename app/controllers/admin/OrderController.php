@@ -179,6 +179,21 @@ class OrderController extends Controller
             // Gửi mail xác nhận
             $emailService->sendOrderConfirmed($order);
 
+            // Thông báo khách hàng
+            $notification = new \App\Models\Notification();
+            $notification->createNotification(
+                $order['user_id'],
+                'customer',
+                '✅ Đơn thuê được xác nhận',
+                'Đơn hàng #' . $orderId . ' đã được xác nhận. Chuẩn bị sản phẩm và theo dõi trạng thái đơn hàng.',
+                'order_confirmed',
+                $orderId,
+                'order',
+                BASE_URL . '/order/' . $orderId,
+                'check-circle',
+                1
+            );
+
             $result = true;
         }
 
@@ -218,6 +233,19 @@ class OrderController extends Controller
 
             if ($result) {
                 $emailService->sendOrderCompleted($order);
+                $notification = new \App\Models\Notification();
+                $notification->createNotification(
+                    $order['user_id'],
+                    'customer',
+                    '🎉 Đơn thuê đã hoàn tất',
+                    'Đơn hàng #' . $orderId . ' đã hoàn tất. Cảm ơn bạn đã sử dụng dịch vụ.',
+                    'order_completed',
+                    $orderId,
+                    'order',
+                    BASE_URL . '/order/' . $orderId,
+                    'gift',
+                    1
+                );
             }
         }
         // HỦY ĐƠN
@@ -294,6 +322,20 @@ class OrderController extends Controller
                 $stmt = $conn->prepare("UPDATE orders SET late_fee = ?, late_fee_status = 'unpaid' WHERE id = ?");
                 $stmt->bind_param("di", $lateFee, $item['order_id']);
                 $stmt->execute();
+
+                $notification = new \App\Models\Notification();
+                $notification->createNotification(
+                    $order['user_id'],
+                    'customer',
+                    '⚠️ Phí trễ phát sinh',
+                    'Đơn hàng #' . $item['order_id'] . ' phát sinh phí trễ ' . number_format($lateFee, 0, ',', '.') . 'đ do trả muộn ' . $daysLate . ' ngày. Vui lòng thanh toán để tiếp tục xử lý.',
+                    'late_fee_incurred',
+                    $item['order_id'],
+                    'order',
+                    BASE_URL . '/order/' . $item['order_id'],
+                    'exclamation-circle',
+                    1
+                );
             }
 
             $remaining = $this->orderItemModel->countNotReturnedByOrder($item['order_id']);
@@ -377,6 +419,22 @@ class OrderController extends Controller
             $stmt = $conn->prepare($sql);
             $stmt->bind_param('sdsi', $actualReturnDate, $lateFee, $lateFeeStatus, $orderId);
             $stmt->execute();
+
+            if ($lateFee > 0 && $lateFeeStatus === 'unpaid') {
+                $notification = new \App\Models\Notification();
+                $notification->createNotification(
+                    $order['user_id'],
+                    'customer',
+                    '⚠️ Phí trễ phát sinh',
+                    'Đơn hàng #' . $orderId . ' phát sinh phí trễ ' . number_format($lateFee, 0, ',', '.') . 'đ. Vui lòng thanh toán để tiếp tục xử lý đơn.',
+                    'late_fee_incurred',
+                    $orderId,
+                    'order',
+                    BASE_URL . '/order/' . $orderId,
+                    'exclamation-circle',
+                    1
+                );
+            }
 
             $conn->commit();
             return $this->json([
@@ -481,6 +539,23 @@ class OrderController extends Controller
             }
 
             $conn->commit();
+
+            if ($order['status'] == 'completed' && $order['deposit_status'] == 'pending') {
+                $notification = new \App\Models\Notification();
+                $notification->createNotification(
+                    $order['user_id'],
+                    'customer',
+                    '⚠️ Phí trễ đã được thanh toán',
+                    'Phí trễ của đơn #' . $orderId . ' đã được xác nhận. Đơn hàng sẽ được xử lý hoàn cọc.',
+                    'late_fee_paid',
+                    $orderId,
+                    'order',
+                    BASE_URL . '/order/' . $orderId,
+                    'exclamation-circle',
+                    1
+                );
+            }
+
             return $this->json(['success' => true, 'message' => 'Đã xác nhận thanh toán phí trễ và cập nhật trạng thái hoàn cọc']);
         } catch (\Exception $e) {
             $conn->rollback();
@@ -524,37 +599,32 @@ class OrderController extends Controller
                 $depositPerItem = (float)($item['deposit_per_item'] ?? 0);
                 $quantity = (int)$item['quantity'];
                 $itemDeposit = $depositPerItem * $quantity;
+                $color = $item['color'] ?? '';
+                $size = $item['size'] ?? '';
 
                 if ($status == 'damaged') {
+                    // Sản phẩm bị hỏng: phạt 50% cọc, trừ trực tiếp vào kho
                     $totalPenalty += $itemDeposit * 0.5;
                     $allGood = false;
-                    // Cập nhật kho: giảm rented_quantity và giảm stock (do hỏng)
-                    $productModel->decreaseVariantRentedQuantity(
-                        $item['product_id'],
-                        $item['color'] ?? '',
-                        $item['size'] ?? '',
-                        $quantity
-                    );
-                    $productModel->decreaseStock($item['product_id'], $quantity);
+                    
+                    // Giảm rented_quantity (trả lại từ trạng thái thuê)
+                    $productModel->decreaseVariantRentedQuantity($item['product_id'], $color, $size, $quantity);
+                    
+                    // Trừ trực tiếp vào stock (vì bị hỏng không thể dùng lại)
+                    $productModel->deductForDamagedOrLost($item['product_id'], $quantity, $color, $size);
                 } elseif ($status == 'lost') {
+                    // Sản phẩm bị mất: phạt 100% cọc, trừ trực tiếp vào kho
                     $totalPenalty += $itemDeposit;
                     $allGood = false;
-                    // Mất: giảm rented_quantity và giảm stock
-                    $productModel->decreaseVariantRentedQuantity(
-                        $item['product_id'],
-                        $item['color'] ?? '',
-                        $item['size'] ?? '',
-                        $quantity
-                    );
-                    $productModel->decreaseStock($item['product_id'], $quantity);
+                    
+                    // Giảm rented_quantity (trả lại từ trạng thái thuê)
+                    $productModel->decreaseVariantRentedQuantity($item['product_id'], $color, $size, $quantity);
+                    
+                    // Trừ trực tiếp vào stock (vì mất rồi không có)
+                    $productModel->deductForDamagedOrLost($item['product_id'], $quantity, $color, $size);
                 } else { // good
-                    // Chỉ giảm rented_quantity, không giảm stock
-                    $productModel->decreaseVariantRentedQuantity(
-                        $item['product_id'],
-                        $item['color'] ?? '',
-                        $item['size'] ?? '',
-                        $quantity
-                    );
+                    // Sản phẩm tốt: hoàn lại kho, chỉ giảm rented_quantity
+                    $productModel->decreaseVariantRentedQuantity($item['product_id'], $color, $size, $quantity);
                 }
             }
 
@@ -577,6 +647,21 @@ class OrderController extends Controller
             }
 
             $conn->commit();
+
+            $notification = new \App\Models\Notification();
+            $notification->createNotification(
+                $order['user_id'],
+                'customer',
+                '💰 Hoàn cọc ' . ($newStatus === 'refunded_full' ? 'toàn bộ' : ($newStatus === 'refunded_partial' ? 'một phần' : 'không')), 
+                'Đơn hàng #' . $orderId . ' đã được xử lý hoàn cọc. Số tiền hoàn: ' . number_format($refundAmount, 0, ',', '.') . 'đ.',
+                'deposit_refund',
+                $orderId,
+                'order',
+                BASE_URL . '/order/' . $orderId,
+                'wallet',
+                1
+            );
+
             return $this->json([
                 'success' => true,
                 'message' => 'Hoàn cọc thành công! Số tiền hoàn: ' . number_format($refundAmount) . 'đ',

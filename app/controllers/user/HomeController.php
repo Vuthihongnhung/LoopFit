@@ -13,7 +13,12 @@ class HomeController extends Controller
 
         // Lấy sản phẩm nổi bật 
         $productModel = new Product();
-        $featuredProducts = $productModel->getFeatured(8); 
+        $featuredProducts = $productModel->getFeatured(8);
+
+        // Tính final_price cho từng sản phẩm
+        foreach ($featuredProducts as &$p) {
+            $p['final_price'] = $productModel->getFinalPrice($p['id'], $p['price'], $p['category_id'] ?? null);
+        }
 
         return $this->view('user/home', [
             'featuredProducts' => $featuredProducts

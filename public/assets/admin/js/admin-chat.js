@@ -22,7 +22,10 @@
                 
                 currentSession = this.dataset.session;
                 window.currentSession = currentSession;
-                document.getElementById('chatTitle').textContent = 'Chat với: ' + currentSession.substring(0, 30) + '...';
+                const userName = this.dataset.userName && this.dataset.userName.trim() ? this.dataset.userName.trim() : '';
+                const userId = this.dataset.userId && this.dataset.userId.trim() ? this.dataset.userId.trim() : '';
+                const titleText = userName ? 'Chat với: ' + userName : (userId ? 'Chat với: user_' + userId : 'Chat với: ' + currentSession.substring(0, 30) + '...');
+                document.getElementById('chatTitle').textContent = titleText;
                 document.getElementById('chatSubtitle').textContent = 'Đang trò chuyện';
                 
                 document.getElementById('adminMessage').disabled = false;
@@ -47,6 +50,18 @@
                 }
             });
         }
+
+        const openSessionFromUrl = () => {
+            const params = new URLSearchParams(window.location.search);
+            const sessionId = params.get('session_id');
+            if (!sessionId) return;
+            const target = Array.from(sessionItems).find(item => item.dataset.session === sessionId);
+            if (target) {
+                target.click();
+            }
+        };
+
+        openSessionFromUrl();
         
         // Xử lý nút reset chat
         const resetBtn = document.getElementById('resetChatBtn');
@@ -214,14 +229,27 @@
         const sendBtn = document.getElementById('adminSendBtn');
         sendBtn.disabled = true;
         sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
+
+        const sessionItems = document.querySelectorAll('.session-item');
+        let userId = '';
+        sessionItems.forEach(function(item) {
+            if (item.dataset.session === currentSession) {
+                userId = item.dataset.userId || '';
+            }
+        });
+
+        let body = 'session_id=' + encodeURIComponent(currentSession) + '&message=' + encodeURIComponent(message);
+        if (userId) {
+            body += '&user_id=' + encodeURIComponent(userId);
+        }
+
         fetch(window.BASE_URL + '/index.php?url=admin/chat/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: 'session_id=' + encodeURIComponent(currentSession) + '&message=' + encodeURIComponent(message)
+            body: body
         })
         .then(response => response.json())
         .then(data => {

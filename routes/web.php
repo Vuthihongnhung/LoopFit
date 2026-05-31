@@ -68,5 +68,8 @@ $router->group(['middleware' => [UserMiddleware::class]], function($router) {
     $router->get('/review/order/{order_id}/product/{product_id}', [App\Controllers\User\ReviewController::class, 'showForm']);
     $router->post('/review/submit', [App\Controllers\User\ReviewController::class, 'submit']);
 
-   
+    $router->get('/notifications', [App\Controllers\User\NotificationController::class, 'index']);
+    // Trang danh sách thông báo
+    $router->get('/notifications', [App\Controllers\User\NotificationController::class, 'index']);
+
 });

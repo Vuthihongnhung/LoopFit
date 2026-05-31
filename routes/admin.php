@@ -12,12 +12,20 @@ $router->group(['middleware' => [App\Middlewares\AdminMiddleware::class]], funct
     $router->get('/admin', [App\Controllers\Admin\DashboardController::class, 'index']);
     $router->get('/admin/dashboard', [App\Controllers\Admin\DashboardController::class, 'index']);
     
+    // Trang danh sách thông báo admin
+    $router->get('/admin/notifications', [App\Controllers\Admin\NotificationController::class, 'index']);
     // API thống kê
     $router->get('/admin/api/stats', [App\Controllers\Admin\DashboardController::class, 'apiGetStats']);
     $router->get('/admin/api/monthly-revenue', [App\Controllers\Admin\DashboardController::class, 'apiMonthlyRevenue']);
     $router->get('/admin/api/top-products', [App\Controllers\Admin\DashboardController::class, 'apiTopProducts']);
     $router->get('/admin/api/pending-transfers', [App\Controllers\Admin\DashboardController::class, 'apiGetPendingTransferOrders']);
     $router->get('/admin/api/pending-deposits', [App\Controllers\Admin\DashboardController::class, 'apiGetPendingDepositReturns']);
+
+    // API doanh thu theo ngày, tháng, quý, năm
+    $router->get('/admin/api/revenue/daily', [App\Controllers\Admin\DashboardController::class, 'getRevenueDaily']);
+    $router->get('/admin/api/revenue/monthly', [App\Controllers\Admin\DashboardController::class, 'getRevenueMonthly']);
+    $router->get('/admin/api/revenue/quarterly', [App\Controllers\Admin\DashboardController::class, 'getRevenueQuarterly']);
+    $router->get('/admin/api/revenue/yearly', [App\Controllers\Admin\DashboardController::class, 'getRevenueYearly']);
     
     // ==================== QUẢN LÝ SẢN PHẨM ====================
     $router->get('/admin/products', [App\Controllers\Admin\ProductController::class, 'index']);
@@ -69,6 +77,12 @@ $router->group(['middleware' => [App\Middlewares\AdminMiddleware::class]], funct
     $router->post('/admin/promotions/store', [App\Controllers\Admin\PromotionController::class, 'store']);
     $router->post('/admin/promotions/update', [App\Controllers\Admin\PromotionController::class, 'update']);
     $router->post('/admin/promotions/delete', [App\Controllers\Admin\PromotionController::class, 'delete']);
+
+    // Chương trình khuyến mãi hàng loạt
+    $router->get('/admin/api/bulk-promotions', [App\Controllers\Admin\BulkPromotionController::class, 'apiGetList']);
+    $router->post('/admin/bulk-promotions/store', [App\Controllers\Admin\BulkPromotionController::class, 'store']);
+    $router->post('/admin/bulk-promotions/update', [App\Controllers\Admin\BulkPromotionController::class, 'update']);
+    $router->post('/admin/bulk-promotions/delete', [App\Controllers\Admin\BulkPromotionController::class, 'delete']);
     
     // ==================== QUẢN LÝ DANH MỤC ====================
     $router->get('/admin/categories', [App\Controllers\Admin\CategoryController::class, 'index']);
@@ -96,4 +110,13 @@ $router->group(['middleware' => [App\Middlewares\AdminMiddleware::class]], funct
     $router->get('/admin/chat/unread-counts', [\App\Controllers\Admin\AdminChatController::class, 'getUnreadCounts']);
     $router->post('/admin/chat/reset', [App\Controllers\Admin\AdminChatController::class, 'resetChat']);
     $router->post('/admin/chat/delete-session', [App\Controllers\Admin\AdminChatController::class, 'deleteSession']);
+    // ==================== THÔNG BÁO ADMIN ====================
+    $router->get('/admin/api/notifications/unread-count', [App\Controllers\Admin\NotificationController::class, 'getUnreadCount']);
+    $router->get('/admin/api/notifications/latest', [App\Controllers\Admin\NotificationController::class, 'getLatest']);
+    $router->post('/admin/api/notifications/mark-read', [App\Controllers\Admin\NotificationController::class, 'markAsRead']);
+    $router->post('/admin/api/notifications/mark-all-read', [App\Controllers\Admin\NotificationController::class, 'markAllAsRead']);
+    $router->post('/admin/api/notifications/delete', [App\Controllers\Admin\NotificationController::class, 'delete']);
+    
+    // Trang danh sách thông báo admin
+    $router->get('/admin/notifications', [App\Controllers\Admin\NotificationController::class, 'index']);
 });

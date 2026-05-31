@@ -312,16 +312,6 @@ class Product extends Model
             $types .= "s";
         }
         
-        if ($priceRange !== 'all') {
-            if ($priceRange == '0-100000') {
-                $sql .= " AND p.price BETWEEN 0 AND 100000";
-            } elseif ($priceRange == '100000-300000') {
-                $sql .= " AND p.price BETWEEN 100000 AND 300000";
-            } elseif ($priceRange == '300000-up') {
-                $sql .= " AND p.price >= 300000";
-            }
-        }
-        
         if (!empty($search)) {
             $sql .= " AND p.name LIKE CONCAT('%', ?, '%')";
             $params[] = $search;
@@ -342,7 +332,30 @@ class Product extends Model
             $stmt->bind_param($types, ...$params);
         }
         $stmt->execute();
-        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $products = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        if ($priceRange !== 'all') {
+            $filtered = [];
+            foreach ($products as $product) {
+                $finalPrice = $this->getFinalPrice(
+                    $product['id'], 
+                    $product['price'], 
+                    $product['category_id'] ?? null, 
+                    $product['discount_percent'] ?? 0
+                );
+
+                if ($priceRange === '0-100000' && $finalPrice >= 0 && $finalPrice <= 100000) {
+                    $filtered[] = $product;
+                } elseif ($priceRange === '100000-300000' && $finalPrice >= 100000 && $finalPrice <= 300000) {
+                    $filtered[] = $product;
+                } elseif ($priceRange === '300000-up' && $finalPrice >= 300000) {
+                    $filtered[] = $product;
+                }
+            }
+            return $filtered;
+        }
+
+        return $products;
     }
     
     public function getProductsByCategories($categoryIds, $gender = 'all', $priceRange = 'all', $sort = 'default')
@@ -350,10 +363,10 @@ class Product extends Model
         return $this->filterProducts($categoryIds, $gender, $priceRange, $sort);
     }
     
-    /* ===== Tìm kiếm sản phẩm theo tên (trả về id, name, price, image) ===== */
+    /* ===== Tìm kiếm sản phẩm theo tên (trả về id, name, price, image, discount_percent, category_id) ===== */
     public function searchByName($keyword)
     {
-        $stmt = $this->conn->prepare("SELECT id, name, price, image FROM products WHERE name LIKE CONCAT('%', ?, '%') LIMIT 10");
+        $stmt = $this->conn->prepare("SELECT id, name, price, image, discount_percent, category_id FROM products WHERE name LIKE CONCAT('%', ?, '%') LIMIT 10");
         $stmt->bind_param("s", $keyword);
         $stmt->execute();
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -572,6 +585,56 @@ class Product extends Model
         $stmt->bind_param('iii', $quantity, $productId, $quantity);
         return $stmt->execute();
     }
+
+    /**
+     * Giảm stock cho sản phẩm bị hỏng/mất (trực tiếp)
+     * - Giảm stock trong products table
+     * - Giảm stock trong product_variants table (nếu có color/size)
+     * @param int $productId
+     * @param int $quantity
+     * @param string $color (optional)
+     * @param string $size (optional)
+     * @return bool
+     */
+    public function deductForDamagedOrLost($productId, $quantity, $color = '', $size = '')
+    {
+        try {
+            // Giảm stock chính
+            $sqlMain = "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?";
+            $stmtMain = $this->conn->prepare($sqlMain);
+            if (!$stmtMain) {
+                error_log("deductForDamagedOrLost main prepare error: " . $this->conn->error);
+                return false;
+            }
+            $stmtMain->bind_param('iii', $quantity, $productId, $quantity);
+            if (!$stmtMain->execute()) {
+                error_log("deductForDamagedOrLost main execute error: " . $stmtMain->error);
+                return false;
+            }
+            $stmtMain->close();
+
+            // Nếu có color/size, giảm stock variant tương ứng
+            if (!empty($color) && !empty($size)) {
+                $sqlVariant = "UPDATE product_variants SET stock = stock - ? WHERE product_id = ? AND color = ? AND size = ? AND stock >= ?";
+                $stmtVariant = $this->conn->prepare($sqlVariant);
+                if (!$stmtVariant) {
+                    error_log("deductForDamagedOrLost variant prepare error: " . $this->conn->error);
+                    return false;
+                }
+                $stmtVariant->bind_param('iissi', $quantity, $productId, $color, $size, $quantity);
+                if (!$stmtVariant->execute()) {
+                    error_log("deductForDamagedOrLost variant execute error: " . $stmtVariant->error);
+                    return false;
+                }
+                $stmtVariant->close();
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            error_log("deductForDamagedOrLost exception: " . $e->getMessage());
+            return false;
+        }
+    }
     
     /* ===== Tăng rented_count (tổng số lượt thuê, dùng cho thống kê) ===== */
     public function increaseRentedCount($productId, $quantity)
@@ -618,5 +681,68 @@ class Product extends Model
     public function getLastInsertId()
     {
         return $this->conn->insert_id;
+    }
+
+     /* ===== Lấy giá sau khi áp dụng bulk promotion (ưu tiên hơn discount_percent) ===== */
+    public function getFinalPrice($product_id, $original_price, $category_id = null, $discount_percent = 0)
+    {
+        $currentDate = date('Y-m-d H:i:s');
+        
+        // Helper an toàn tránh lỗi prepare
+        $fetchPromo = function($sql, $types = '', ...$params) use ($currentDate) {
+            $stmt = $this->conn->prepare($sql);
+            if ($stmt === false) return null;
+            if ($types) $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            return $stmt->get_result()->fetch_assoc();
+        };
+        
+        // 1. Bulk promotion specific (qua bulk_promotion_items)
+        $sql = "SELECT bp.promotion_type, bp.discount_value, bp.fixed_price
+                FROM bulk_promotions bp
+                INNER JOIN bulk_promotion_items bpi ON bp.id = bpi.bulk_promotion_id
+                WHERE bp.is_active = 1 AND bp.start_date <= ? AND bp.end_date >= ?
+                AND bp.scope_type = 'specific_products' AND bpi.product_id = ?
+                LIMIT 1";
+        $promo = $fetchPromo($sql, 'ssi', $currentDate, $currentDate, $product_id);
+        if ($promo) return $this->applyPromotion($original_price, $promo);
+        
+        // 2. Bulk promotion category (qua bulk_promotion_categories)
+        if ($category_id) {
+            $sql = "SELECT bp.promotion_type, bp.discount_value, bp.fixed_price
+                    FROM bulk_promotions bp
+                    INNER JOIN bulk_promotion_categories bpc ON bp.id = bpc.bulk_promotion_id
+                    WHERE bp.is_active = 1 AND bp.start_date <= ? AND bp.end_date >= ?
+                    AND bp.scope_type = 'category' AND bpc.category_id = ?
+                    LIMIT 1";
+            $promo = $fetchPromo($sql, 'ssi', $currentDate, $currentDate, $category_id);
+            if ($promo) return $this->applyPromotion($original_price, $promo);
+        }
+        
+        // 3. Bulk promotion all products
+        $sql = "SELECT promotion_type, discount_value, fixed_price
+                FROM bulk_promotions
+                WHERE is_active = 1 AND start_date <= ? AND end_date >= ?
+                AND scope_type = 'all_products'
+                LIMIT 1";
+        $promo = $fetchPromo($sql, 'ss', $currentDate, $currentDate);
+        if ($promo) return $this->applyPromotion($original_price, $promo);
+        
+        // 4. Không có bulk -> dùng discount_percent của sản phẩm
+        if ($discount_percent > 0) {
+            return round($original_price * (100 - $discount_percent) / 100);
+        }
+        
+        // 5. Giá gốc
+        return round($original_price);
+    }
+
+    private function applyPromotion($original_price, $promo)
+    {
+        if ($promo['promotion_type'] === 'percentage') {
+            return round($original_price * (100 - $promo['discount_value']) / 100);
+        } else { // fixed_price
+            return (float)$promo['fixed_price'];
+        }
     }
 }

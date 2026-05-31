@@ -17,6 +17,12 @@ $router->get('/api/check-stock/{id}', [App\Controllers\User\ProductController::c
 // === API yêu cầu đăng nhập ===
 $router->group(['middleware' => [AuthMiddleware::class]], function ($router) {
     
+    // ========== API THÔNG BÁO ==========
+    $router->get('/api/notifications/unread-count', [App\Controllers\User\NotificationController::class, 'getUnreadCount']);
+    $router->get('/api/notifications/latest', [App\Controllers\User\NotificationController::class, 'getLatest']);
+    $router->post('/api/notifications/mark-read', [App\Controllers\User\NotificationController::class, 'markAsRead']);
+    $router->post('/api/notifications/mark-all-read', [App\Controllers\User\NotificationController::class, 'markAllAsRead']);
+    $router->post('/api/notifications/delete', [App\Controllers\User\NotificationController::class, 'delete']);
     // Giỏ hàng
     $router->post('/api/cart/add', [App\Controllers\User\CartController::class, 'add']);
     $router->post('/api/cart/update', [App\Controllers\User\CartController::class, 'update']);

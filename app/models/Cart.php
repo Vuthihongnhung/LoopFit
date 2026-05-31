@@ -17,7 +17,8 @@ class Cart extends Model
                     c.color,
                     c.rent_date,
                     c.return_date,
-                    c.price AS unit_price,  
+                    c.price AS unit_price, 
+                    c.original_price,  
                     p.name,
                     p.image,
                     p.deposit_price,
@@ -45,6 +46,7 @@ class Cart extends Model
             $item['deposit'] = $depositPrice * $qty;
             $item['days'] = $days;
             $item['price'] = $unitPrice; 
+            $item['original_price'] = $item['original_price'] ?? null;
         }
         
         return $items;
@@ -106,17 +108,17 @@ class Cart extends Model
 
 
     /* ===== Thêm sản phẩm vào giỏ hàng (hoặc cập nhật số lượng nếu đã tồn tại cùng biến thể) ===== */
-    public function addItem($userId, $productId, $size, $color, $rentDate, $returnDate, $quantity, $price)
+    public function addItem($userId, $productId, $size, $color, $rentDate, $returnDate, $quantity, $price, $originalPrice = null)
     {
         $existing = $this->findItem($userId, $productId, $size, $color, $rentDate, $returnDate);
         if ($existing) {
             $newQty = $existing['quantity'] + $quantity;
-            $stmt = $this->conn->prepare("UPDATE cart SET quantity = ? WHERE id = ?");
-            $stmt->bind_param("ii", $newQty, $existing['id']);
+            $stmt = $this->conn->prepare("UPDATE cart SET quantity = ?, price = ?, original_price = ? WHERE id = ?");
+            $stmt->bind_param("iddi", $newQty, $price, $originalPrice, $existing['id']);
             return $stmt->execute();
         } else {
-            $stmt = $this->conn->prepare("INSERT INTO cart (user_id, product_id, size, color, rent_date, return_date, quantity, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("iissssii", $userId, $productId, $size, $color, $rentDate, $returnDate, $quantity, $price);
+            $stmt = $this->conn->prepare("INSERT INTO cart (user_id, product_id, size, color, rent_date, return_date, quantity, price, original_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iissssidd", $userId, $productId, $size, $color, $rentDate, $returnDate, $quantity, $price, $originalPrice);
             return $stmt->execute();
         }
     }

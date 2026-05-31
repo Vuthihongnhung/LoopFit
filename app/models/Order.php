@@ -268,7 +268,7 @@ class Order extends Model
 
     /* ===== Doanh thu từ các đơn hoàn tất và đã thanh toán ===== */
     public function getRevenue() {
-        $result = $this->conn->query("SELECT SUM(final_total) as total FROM orders WHERE status = 'completed' AND payment_status = 'paid'");
+        $result = $this->conn->query("SELECT SUM(total_price - discount_price) as total FROM orders WHERE status = 'completed' AND payment_status = 'paid'");
         return $result ? (float)$result->fetch_assoc()['total'] : 0;
     }
 
@@ -277,7 +277,7 @@ class Order extends Model
         if (!$year) $year = date('Y');
         $stmt = $this->conn->prepare("SELECT 
                     MONTH(created_at) as month,
-                    SUM(discount_price) as revenue
+                    SUM(total_price - discount_price) as revenue
                 FROM orders 
                 WHERE status = 'completed' AND YEAR(created_at) = ?
                 GROUP BY MONTH(created_at)
@@ -290,6 +290,133 @@ class Order extends Model
             $revenues[$row['month']] = $row['revenue'];
         }
         return $revenues;
+    }
+
+    /* ===== Doanh thu theo ngày trong N ngày gần nhất ===== */
+    public function getRevenueDaily($days = 7)
+    {
+        $days = (int) $days;
+        $sql = "SELECT DATE(created_at) as day, SUM(total_price - discount_price) as revenue
+                FROM orders
+                WHERE status = 'completed' AND payment_status = 'paid'
+                    AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                GROUP BY DATE(created_at)
+                ORDER BY DATE(created_at) ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param('i', $days);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $revenues = [];
+        while ($row = $result->fetch_assoc()) {
+            $revenues[$row['day']] = (float)$row['revenue'];
+        }
+
+        $labels = [];
+        $data = [];
+        $startDate = date('Y-m-d', strtotime("-" . ($days - 1) . " days"));
+        for ($i = 0; $i < $days; $i++) {
+            $date = date('Y-m-d', strtotime("$startDate +$i day"));
+            $labels[] = date('d/m', strtotime($date));
+            $data[] = $revenues[$date] ?? 0;
+        }
+
+        return ['labels' => $labels, 'data' => $data];
+    }
+
+    /* ===== Doanh thu theo các tháng gần nhất ===== */
+    public function getRevenueMonthly($months = 12)
+    {
+        $months = (int) $months;
+        $sql = "SELECT YEAR(created_at) AS year, MONTH(created_at) AS month, SUM(total_price - discount_price) AS revenue
+                FROM orders
+                WHERE status = 'completed' AND payment_status = 'paid'
+                    AND DATE_FORMAT(created_at, '%Y-%m') >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL ? MONTH), '%Y-%m')
+                GROUP BY YEAR(created_at), MONTH(created_at)
+                ORDER BY YEAR(created_at), MONTH(created_at) ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param('i', $months);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $revenues = [];
+        while ($row = $result->fetch_assoc()) {
+            $key = sprintf('%04d-%02d', $row['year'], $row['month']);
+            $revenues[$key] = (float)$row['revenue'];
+        }
+
+        $labels = [];
+        $data = [];
+        $current = new \DateTime('-' . ($months - 1) . ' months');
+        for ($i = 0; $i < $months; $i++) {
+            $key = $current->format('Y-m');
+            $labels[] = $current->format('m/Y');
+            $data[] = $revenues[$key] ?? 0;
+            $current->modify('+1 month');
+        }
+
+        return ['labels' => $labels, 'data' => $data];
+    }
+
+    /* ===== Doanh thu theo quý trong năm hiện tại ===== */
+    public function getRevenueQuarterly($year = null)
+    {
+        if (!$year) $year = date('Y');
+        $sql = "SELECT QUARTER(created_at) AS quarter, SUM(total_price - discount_price) AS revenue
+                FROM orders
+                WHERE status = 'completed' AND payment_status = 'paid'
+                    AND YEAR(created_at) = ?
+                GROUP BY QUARTER(created_at)
+                ORDER BY quarter ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param('i', $year);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $revenues = [];
+        while ($row = $result->fetch_assoc()) {
+            $revenues[$row['quarter']] = (float)$row['revenue'];
+        }
+
+        $labels = ['Q1', 'Q2', 'Q3', 'Q4'];
+        $data = [];
+        for ($q = 1; $q <= 4; $q++) {
+            $data[] = $revenues[$q] ?? 0;
+        }
+
+        return ['labels' => $labels, 'data' => $data];
+    }
+
+    /* ===== Doanh thu theo năm trong N năm gần nhất ===== */
+    public function getRevenueYearly($years = 5)
+    {
+        $years = (int) $years;
+        $currentYear = (int) date('Y');
+        $startYear = $currentYear - $years + 1;
+        $sql = "SELECT YEAR(created_at) AS year, SUM(total_price - discount_price) AS revenue
+                FROM orders
+                WHERE status = 'completed' AND payment_status = 'paid'
+                    AND YEAR(created_at) >= ?
+                GROUP BY YEAR(created_at)
+                ORDER BY year ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param('i', $startYear);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $revenues = [];
+        while ($row = $result->fetch_assoc()) {
+            $revenues[$row['year']] = (float)$row['revenue'];
+        }
+
+        $labels = [];
+        $data = [];
+        for ($year = $startYear; $year <= $currentYear; $year++) {
+            $labels[] = (string)$year;
+            $data[] = $revenues[$year] ?? 0;
+        }
+
+        return ['labels' => $labels, 'data' => $data];
     }
 
     /* ===== Top sản phẩm được thuê nhiều nhất (doanh số cao nhất) ===== */

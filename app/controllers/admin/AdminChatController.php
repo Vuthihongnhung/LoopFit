@@ -97,6 +97,7 @@ class AdminChatController extends Controller
         
         $sessionId = $_POST['session_id'] ?? '';
         $message = trim($_POST['message'] ?? '');
+        $userId = isset($_POST['user_id']) && is_numeric($_POST['user_id']) ? (int) $_POST['user_id'] : null;
         
         if (empty($sessionId) || empty($message)) {
             echo json_encode(['success' => false, 'error' => 'Invalid data']);
@@ -104,7 +105,26 @@ class AdminChatController extends Controller
         }
         
         $adminId = $_SESSION['admin']['id'];
-        $result = $this->chatModel->sendMessage(null, $sessionId, 'admin', $message);
+        if ($userId === null && preg_match('/^user_(\d+)$/', $sessionId, $matches)) {
+            $userId = (int) $matches[1];
+        }
+        $result = $this->chatModel->sendMessage($userId, $sessionId, 'admin', $message);
+
+        if ($result && $userId !== null && $userId > 0) {
+            $notificationModel = new \App\Models\Notification();
+            $notificationModel->createNotification(
+                $userId,
+                'specific',
+                '📩 Admin đã trả lời bạn',
+                'Admin đã gửi phản hồi trong cuộc trò chuyện của bạn. Vui lòng kiểm tra tin nhắn.',
+                'support_reply',
+                null,
+                null,
+                BASE_URL . '/chat',
+                'reply',
+                1
+            );
+        }
         
         echo json_encode([
             'success' => $result,

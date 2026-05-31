@@ -38,11 +38,12 @@ $(document).ready(function() {
         products.forEach(p => {
             let imgUrl = BASE_URL + '/uploads/' + (p.image ? p.image.split(',')[0].trim() : 'default-product.png');
             let price = parseFloat(p.price) || 0;
-            let discountPercent = p.discount_percent || 0;
-            let finalPrice = price;
+            let finalPrice = typeof p.final_price !== 'undefined' ? parseFloat(p.final_price) : price;
+            if (isNaN(finalPrice) || finalPrice <= 0) {
+                finalPrice = price;
+            }
             let oldPriceHtml = '';
-            if (discountPercent > 0) {
-                finalPrice = price * (100 - discountPercent) / 100;
+            if (finalPrice < price) {
                 oldPriceHtml = `<span class="old-price">${formatNumber(price)}đ</span>`;
             }
             html += `

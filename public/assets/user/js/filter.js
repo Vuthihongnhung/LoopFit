@@ -80,13 +80,18 @@ document.addEventListener('DOMContentLoaded', function() {
             let firstImage = (p.image || '').split(',')[0]?.trim() || 'default-product.png';
             let imgUrl = BASE_URL + '/uploads/' + firstImage;
             let price = parseFloat(p.price) || 0;
-            let discountPercent = p.discount_percent || 0;
-            let finalPrice = price;
-            let oldPriceHtml = '';
-            if (discountPercent > 0) {
-                finalPrice = price * (100 - discountPercent) / 100;
-                oldPriceHtml = `<span class="old-price">${formatNumber(price)}đ</span>`;
-            }
+let discountPercent = p.discount_percent || 0;
+let bulkPrice = p.final_price ? parseFloat(p.final_price) : null;
+let finalPrice = price;
+let oldPriceHtml = '';
+
+if (bulkPrice && bulkPrice != price) {
+    finalPrice = bulkPrice;
+    oldPriceHtml = `<span class="old-price">${formatNumber(price)}đ</span>`;
+} else if (discountPercent > 0) {
+    finalPrice = price * (100 - discountPercent) / 100;
+    oldPriceHtml = `<span class="old-price">${formatNumber(price)}đ</span>`;
+}
             let formattedFinalPrice = formatNumber(finalPrice) + 'đ';
             let avgRating = Math.round((p.avg_rating || 0) * 10) / 10;
             let fullStars = Math.floor(avgRating);
@@ -104,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <a href="${BASE_URL}/product/${p.id}" class="product-link">
                         <div class="product-image">
                             <img src="${imgUrl}" alt="${escapeHtml(p.name)}">
-                            ${discountPercent > 0 ? `<span class="discount-badge">-${discountPercent}%</span>` : ''}
+                            ${(bulkPrice && bulkPrice != price) ? `<span class="discount-badge bulk">🔥 -${Math.round((1 - bulkPrice/price)*100)}%</span>` : (discountPercent > 0 ? `<span class="discount-badge">-${discountPercent}%</span>` : '')}
                         </div>
                         <div class="product-info">
                             <h3 class="product-name">${escapeHtml(p.name)}</h3>

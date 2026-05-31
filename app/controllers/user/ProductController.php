@@ -41,6 +41,9 @@ class ProductController extends Controller
     // Lọc sản phẩm giảm giá
     if ($filter === 'discount') {
         $products = $productModel->getDiscountedProducts();
+        foreach ($products as &$p) {
+            $p['final_price'] = $productModel->getFinalPrice($p['id'], $p['price'], $p['category_id'] ?? null);
+        }
         $this->view('user/products', [
             'products'       => $products,
             'current_gender' => $gender,
@@ -56,6 +59,9 @@ class ProductController extends Controller
     // Lọc sản phẩm mới (hàng mới về)
     if ($filter === 'new') {
         $products = $productModel->getNewProducts();
+        foreach ($products as &$p) {
+            $p['final_price'] = $productModel->getFinalPrice($p['id'], $p['price'], $p['category_id'] ?? null);
+        }
         $this->view('user/products', [
             'products'       => $products,
             'current_gender' => $gender,
@@ -83,6 +89,11 @@ class ProductController extends Controller
         $products = $productModel->getProductsByCategories($categoryIds, $gender, $priceRange, $sort);
     } else {
         $products = $productModel->filterProducts(null, $gender, $priceRange, $sort);
+    }
+
+    // Tính giá sau bulk promotion cho từng sản phẩm
+    foreach ($products as &$p) {
+        $p['final_price'] = $productModel->getFinalPrice($p['id'], $p['price'], $p['category_id'] ?? null);
     }
 
     // Tạo breadcrumb (đường dẫn điều hướng) cho danh mục
@@ -190,10 +201,21 @@ class ProductController extends Controller
     }
 
     // Tính giá hiện tại sau giảm giá
-    $currentPrice = $product['price'];
+    $bulkPrice = $productModel->getFinalPrice($id, $product['price'], $product['category_id'] ?? null);
     $discountPercent = (int)($product['discount_percent'] ?? 0);
-    if ($discountPercent > 0) {
+    $hasBulkDiscount = false;
+
+    if ($bulkPrice != $product['price']) {
+        // Có bulk promotion
+        $currentPrice = $bulkPrice;
+        $hasBulkDiscount = true;
+    } elseif ($discountPercent > 0) {
+        // Chỉ có discount_percent
         $currentPrice = $product['price'] * (100 - $discountPercent) / 100;
+        $hasBulkDiscount = false;
+    } else {
+        $currentPrice = $product['price'];
+        $hasBulkDiscount = false;
     }
 
     $related = [];
@@ -214,6 +236,8 @@ class ProductController extends Controller
         'product' => $product,
         'variants' => $variants,
         'currentPrice' => $currentPrice,
+        'hasBulkDiscount' => $hasBulkDiscount,
+        'bulkDiscountPercent' => $hasBulkDiscount ? round((1 - $currentPrice / $product['price']) * 100) : 0,
         'relatedProducts' => $related,
         'reviews' => $reviews,
         'userCanReview' => $userCanReview,
@@ -244,6 +268,11 @@ class ProductController extends Controller
 
         $products = $productModel->filterProducts($categoryIds, $gender, $price, $sort, $search);
 
+        // Tính final_price cho từng sản phẩm
+        foreach ($products as &$p) {
+            $p['final_price'] = $productModel->getFinalPrice($p['id'], $p['price'], $p['category_id'] ?? null);
+        }
+        
         header('Content-Type: application/json');
         echo json_encode($products);
         exit;
@@ -255,6 +284,16 @@ class ProductController extends Controller
         $q = $_GET['q'] ?? '';
         $productModel = new Product();
         $products = $productModel->searchByName($q);
+
+        foreach ($products as &$product) {
+            $product['final_price'] = $productModel->getFinalPrice(
+                $product['id'], 
+                (float)$product['price'], 
+                $product['category_id'] ?? null,
+                (int)($product['discount_percent'] ?? 0)
+            );
+        }
+
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'data' => $products]);
         exit;

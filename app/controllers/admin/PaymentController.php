@@ -124,6 +124,20 @@ class PaymentController extends Controller
                 'method'   => $order['payment_method'],
                 'status'   => 'completed'
             ]);
+
+            $notification = new \App\Models\Notification();
+            $notification->createNotification(
+                $updatedOrder['user_id'],
+                'customer',
+                '💳 Thanh toán chuyển khoản xác nhận',
+                'Yêu cầu thanh toán của bạn cho đơn #' . $orderId . ' đã được admin xác nhận thành công.',
+                'payment_confirmed',
+                $orderId,
+                'order',
+                BASE_URL . '/order/' . $orderId,
+                'credit-card',
+                1
+            );
             
             echo json_encode(['success' => true, 'message' => 'Đã xác nhận thanh toán thành công']);
         } else {

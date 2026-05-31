@@ -87,7 +87,9 @@ class CheckoutController extends Controller
             $diff = (new \DateTime($rentDate))->diff(new \DateTime($returnDate));
             $days = max(1, $diff->days + 1);
 
-            $pricePerDay = (float)($cartItem['price'] ?? $product['price']);
+            // Lấy giá đã giảm từ bulk promotion
+            $finalPrice = $productModel->getFinalPrice($product['id'], $product['price'], $product['category_id'] ?? null);
+            $pricePerDay = (float)($cartItem['price'] ?? $finalPrice);
             $depositPerItem = (float)($product['deposit_price'] ?? $product['price'] * 0.3);
             $quantity = (int)$cartItem['quantity'];
 
@@ -287,8 +289,10 @@ class CheckoutController extends Controller
             $product = $productModel->getById($cartItem['product_id']);
             if (!$product) continue;
             
-            $usedPrice = (float)($cartItem['price'] ?? $product['price']);
-            $depositPrice = (float)($product['deposit_price'] ?? $product['price'] * 0.3);
+            // Lấy giá đã giảm từ bulk promotion
+        $finalPrice = $productModel->getFinalPrice($product['id'], $product['price'], $product['category_id'] ?? null);
+        $usedPrice = (float)($cartItem['price'] ?? $finalPrice);
+        $depositPrice = (float)($product['deposit_price'] ?? $product['price'] * 0.3);
             
             $rentDateObj = new \DateTime($cartItem['rent_date']);
             $returnDateObj = new \DateTime($cartItem['return_date']);
@@ -413,6 +417,35 @@ class CheckoutController extends Controller
             $promoModel = new Promotion();
             $promoModel->incrementUsedCount($voucherCode);
         }
+
+        // Tạo thông báo cho quản trị viên khi có đơn hàng mới
+        $notificationModel = new \App\Models\Notification();
+        $notificationModel->createNotification(
+            0,
+            'all_admins',
+            '📦 Đơn hàng mới vừa tạo',
+            'Đơn hàng #' . $orderId . ' đã được tạo và đang chờ xử lý.',
+            'new_order',
+            $orderId,
+            'order',
+            BASE_URL . '/index.php?url=admin/orders/detail&id=' . $orderId,
+            'shopping-cart',
+            1
+        );
+
+        // Tạo thông báo cho khách hàng khi đơn thuê được tạo thành công
+        $notificationModel->createNotification(
+            $userId,
+            'customer',
+            '✅ Đơn thuê đã được tạo',
+            'Đơn hàng #' . $orderId . ' đã được tạo thành công. Vui lòng kiểm tra chi tiết đơn hàng.',
+            'order_created',
+            $orderId,
+            'order',
+            BASE_URL . '/order/' . $orderId,
+            'shopping-cart',
+            1
+        );
         
         if ($paymentMethod === 'cash') {
             foreach ($cartIdArray as $cartId) {

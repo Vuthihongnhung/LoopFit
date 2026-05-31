@@ -88,9 +88,9 @@ class DashboardController extends Controller
         
         $sql = "SELECT 
                     MONTH(created_at) as month,
-                    SUM(final_total) as revenue
+                    SUM(total_price - discount_price) as revenue
                 FROM orders 
-                WHERE status = 'completed' AND YEAR(created_at) = YEAR(CURDATE())
+                WHERE status = 'completed' AND payment_status = 'paid' AND YEAR(created_at) = YEAR(CURDATE())
                 GROUP BY MONTH(created_at)
                 ORDER BY month ASC";
         
@@ -131,5 +131,73 @@ class DashboardController extends Controller
         header('Content-Type: application/json');
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
+    }
+
+       public function getRevenueDaily()
+    {
+        $orderModel = new \App\Models\Order();
+        $revenue = $orderModel->getRevenueDaily(7);
+        $this->json([
+            'labels' => $revenue['labels'],
+            'datasets' => [[
+                'label' => 'Doanh thu (VNĐ)',
+                'data' => $revenue['data'],
+                'backgroundColor' => 'rgba(37, 99, 235, 0.7)',
+                'borderColor' => '#2563eb',
+                'borderWidth' => 1,
+                'borderRadius' => 6
+            ]]
+        ]);
+    }
+
+    public function getRevenueMonthly()
+    {
+        $orderModel = new \App\Models\Order();
+        $revenue = $orderModel->getRevenueMonthly(12);
+        $this->json([
+            'labels' => $revenue['labels'],
+            'datasets' => [[
+                'label' => 'Doanh thu (VNĐ)',
+                'data' => $revenue['data'],
+                'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
+                'borderColor' => '#2563eb',
+                'borderWidth' => 1,
+                'fill' => false
+            ]]
+        ]);
+    }
+
+    public function getRevenueQuarterly()
+    {
+        $orderModel = new \App\Models\Order();
+        $revenue = $orderModel->getRevenueQuarterly();
+        $this->json([
+            'labels' => $revenue['labels'],
+            'datasets' => [[
+                'label' => 'Doanh thu (VNĐ)',
+                'data' => $revenue['data'],
+                'backgroundColor' => 'rgba(16, 185, 129, 0.7)',
+                'borderColor' => '#10b981',
+                'borderWidth' => 1,
+                'borderRadius' => 6
+            ]]
+        ]);
+    }
+
+    public function getRevenueYearly()
+    {
+        $orderModel = new \App\Models\Order();
+        $revenue = $orderModel->getRevenueYearly(5);
+        $this->json([
+            'labels' => $revenue['labels'],
+            'datasets' => [[
+                'label' => 'Doanh thu (VNĐ)',
+                'data' => $revenue['data'],
+                'backgroundColor' => 'rgba(234, 179, 8, 0.6)',
+                'borderColor' => '#f59e0b',
+                'borderWidth' => 1,
+                'fill' => false
+            ]]
+        ]);
     }
 }

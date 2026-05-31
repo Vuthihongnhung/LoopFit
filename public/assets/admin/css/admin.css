@@ -4022,3 +4022,565 @@ a.btn-secondary {
 .sticker-item:hover {
     background: #f0f2f5;
 }
+
+/* Admin notification bell */
+#adminNotificationBell {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 15px;
+    position: relative;
+}
+#adminNotificationBell:hover {
+    color: #ffc107;
+}
+#adminNotificationBadge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 11px;
+}
+/* Admin notification bell */
+#adminNotificationBell {
+    background: #007bff;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-left: 15px;
+    transition: background 0.3s;
+}
+#adminNotificationBell:hover {
+    background: #0056b3;
+}
+#adminNotificationBadge {
+    background: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 11px;
+    margin-left: 5px;
+}
+/* ========== ADMIN NOTIFICATION PANEL STYLES ========== */
+
+/* Panel chính */
+#adminNotificationPanel {
+    position: absolute;
+    right: 20px;
+    top: 55px;
+    width: 380px;
+    max-width: 90vw;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    color: #333;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+}
+
+/* Header panel */
+#adminNotificationPanel .panel-header,
+#adminNotificationPanel > div:first-child {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+}
+
+/* Nút đánh dấu đã đọc */
+#adminMarkAllReadBtn {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+#adminMarkAllReadBtn:hover {
+    background: #e5e7eb;
+}
+
+/* Danh sách thông báo */
+#adminNotificationList {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Mỗi item thông báo */
+.admin-noti-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.admin-noti-item:hover {
+    background: #f5f5f5;
+}
+
+.admin-noti-item.unread {
+    background: #e3f2fd;
+}
+
+.admin-noti-item .title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #1f2937;
+}
+
+.admin-noti-item .message {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.admin-noti-item .time {
+    font-size: 10px;
+    color: #9ca3af;
+}
+
+/* Footer panel */
+#adminNotificationPanel .panel-footer,
+#adminNotificationPanel > div:last-child {
+    padding: 10px 16px;
+    text-align: center;
+    border-top: 1px solid #e5e7eb;
+    background: #f8f9fa;
+}
+
+#adminNotificationPanel .panel-footer a,
+#adminNotificationPanel > div:last-child a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#adminNotificationPanel .panel-footer a:hover,
+#adminNotificationPanel > div:last-child a:hover {
+    text-decoration: underline;
+}
+
+/* Loading và empty states */
+#adminNotificationList .loading,
+#adminNotificationList .empty {
+    padding: 20px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* Icon chuông admin */
+#adminNotificationBell {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 15px;
+    position: relative;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.3s;
+}
+
+#adminNotificationBell:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffc107;
+}
+
+#adminNotificationBadge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Responsive cho màn hình nhỏ */
+@media (max-width: 576px) {
+    #adminNotificationPanel {
+        width: 320px;
+        right: 10px;
+        top: 50px;
+    }
+    
+    .admin-noti-item .title {
+        font-size: 13px;
+    }
+    
+    .admin-noti-item .message {
+        font-size: 11px;
+    }
+}
+/* Đưa bảng thông báo admin sang bên trái */
+#adminNotificationPanel {
+    right: auto !important;
+    left: 20px !important;
+}
+
+#bulkPromoModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    z-index: 1200;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+
+#bulkPromoModal .modal-content {
+    width: 100% !important;
+    max-width: 580px !important;
+    max-height: calc(100vh - 36px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 24px !important;
+    background: #f8fafc !important;
+    box-shadow: 0 26px 70px rgba(15, 23, 42, 0.16) !important;
+    overflow: hidden !important;
+}
+
+#bulkPromoModal .modal-header {
+    padding: 20px 24px !important;
+    background: linear-gradient(135deg, #0f766e, #22c55e) !important;
+    color: #f8fafc !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 14px !important;
+}
+
+#bulkPromoModal .modal-header h2 {
+    margin: 0 !important;
+    font-size: 1.35rem !important;
+    font-weight: 700 !important;
+    color: inherit !important;
+}
+
+#bulkPromoModal .modal-header .close {
+    font-size: 1.8rem !important;
+    cursor: pointer !important;
+    color: rgba(248, 250, 252, 0.95) !important;
+    transition: opacity 0.2s ease !important;
+}
+
+#bulkPromoModal .modal-header .close:hover {
+    opacity: 0.8 !important;
+}
+
+#bulkPromoModal .modal-body {
+    padding: 26px 28px 28px !important;
+    background: #f8fafc !important;
+    overflow-y: auto !important;
+    min-height: 0 !important;
+    max-height: calc(100vh - 180px) !important;
+}
+
+#bulkPromoModal .form-group input:not([type="radio"]):not([type="checkbox"]),
+#bulkPromoModal .form-group select,
+#bulkPromoModal .form-group textarea {
+    width: 100% !important;
+    padding: 14px 16px !important;
+    font-size: 14px !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    background: #ecfdf5 !important;
+    color: #0f172a !important;
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+#bulkPromoModal .form-group input:focus,
+#bulkPromoModal .form-group select:focus,
+#bulkPromoModal .form-group textarea:focus {
+    outline: none !important;
+    border-color: #16a34a !important;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.16) !important;
+}
+
+#bulkPromoModal .form-group label {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+    color: #0f172a !important;
+}
+
+.bulkPromoModal .form-description {
+    padding: 16px 0 24px !important;
+    font-size: 0.95rem !important;
+    color: #475569 !important;
+    line-height: 1.6 !important;
+    border-bottom: 1px solid #d9fede !important; 
+    margin-bottom: 24px !important;
+}
+
+#bulkPromoModal .discount-type-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+}
+
+#bulkPromoModal .discount-type-group label {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    background: #d9fddb !important;
+    cursor: pointer !important;
+    color: #0f766e !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    flex: 1 1 auto !important;
+    min-width: 170px !important;
+    max-width: 100% !important;
+}
+
+#bulkPromoModal .discount-type-group label span {
+    display: inline-block !important;
+    white-space: nowrap !important;
+}
+
+#bulkPromoModal .discount-type-group input[type="radio"] {
+    accent-color: #16a34a !important;
+    margin: 0 !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+#bulkPromoModal .discount-type-group input:checked + span {
+    color: #16a34a !important;
+    font-weight: 700 !important;
+}
+
+#bulkPromoModal .discount-type-group label:hover {
+    background: #bef264 !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+#bulkPromoModal .discount-type-group input {
+    flex-shrink: 0 !important;
+}
+
+@media (max-width: 520px) {
+    #bulkPromoModal .discount-type-group {
+        gap: 10px !important;
+    }
+    #bulkPromoModal .discount-type-group label {
+        width: 100% !important;
+        min-width: auto !important;
+        justify-content: flex-start !important;
+    }
+}
+
+#bulkPromoModal .checkbox-label,
+#bulkPromoModal .form-group label.checkbox-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    color: #0f172a !important;
+    margin-bottom: 0 !important;
+}
+
+#bulkPromoModal .checkbox-label input {
+    flex-shrink: 0 !important;
+}
+
+#bulkPromoModal .form-row {
+    display: flex !important;
+    gap: 18px !important;
+    flex-wrap: wrap !important;
+}
+
+#bulkPromoModal .form-row .form-group {
+    flex: 1 1 320px !important;
+    min-width: 220px !important;
+}
+
+#bulkPromoModal .form-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+    margin-top: 28px !important;
+    padding-top: 18px !important;
+    border-top: 1px solid rgba(16, 185, 129, 0.18) !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    background: #f8fafc !important;
+    z-index: 10 !important;
+}
+
+#bulkPromoModal #bulkPromoProductsList {
+    max-height: 220px !important;
+    overflow-y: auto !important;
+}
+
+#bulkPromoModal .btn-primary {
+    background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+    color: white !important;
+    padding: 12px 24px !important;
+    border-radius: 999px !important;
+    border: none !important;
+}
+
+#bulkPromoModal .btn-primary:hover {
+    background: linear-gradient(135deg, #22c55e, #10b981) !important;
+}
+
+#bulkPromoModal .btn-secondary {
+    background: #ecfdf5 !important;
+    color: #164e63 !important;
+    padding: 12px 24px !important;
+    border-radius: 999px !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+#bulkPromoModal .btn-secondary:hover {
+    background: #d9f99d !important;
+}
+
+@media (max-width: 768px) {
+    #bulkPromoModal .modal-content {
+        max-width: 100% !important;
+    }
+
+    #bulkPromoModal .modal-header,
+    #bulkPromoModal .modal-body {
+        padding: 18px 20px !important;
+    }
+
+    #bulkPromoModal .form-row {
+        flex-direction: column !important;
+    }
+}
+
+/* Duplicate bulk promotion modal scroll rules removed; authoritative layout is defined above */
+/* Style cho select multiple trong bulk promotion */
+#bulkPromoCategoryId {
+    min-height: 150px !important;
+}
+
+#bulkPromoCategoryId option {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#bulkPromoCategoryId option:checked {
+    background: #2563eb linear-gradient(0deg, #2563eb, #2563eb);
+    color: white;
+}
+/* ===== CẢI THIỆN MODAL MÃ GIẢM GIÁ ===== */
+
+/* Thanh cuộn cho modal */
+#promoModal .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Padding cho nội dung */
+#promoModal .modal-body {
+    padding: 20px 25px !important;
+}
+
+/* Căn chỉnh label */
+#promoModal .form-group label {
+    display: block !important;
+    text-align: left !important;
+    margin-bottom: 8px !important;
+    font-weight: 600 !important;
+}
+
+/* Input full width */
+#promoModal .form-group input,
+#promoModal .form-group select {
+    width: 100% !important;
+    padding: 10px 12px !important;
+    box-sizing: border-box !important;
+}
+
+/* Radio group căn trái */
+#promoModal .discount-type-group {
+    display: flex;
+    gap: 20px;
+    justify-content: flex-start;
+}
+
+/* Form row */
+#promoModal .form-row {
+    display: flex;
+    gap: 16px;
+}
+
+#promoModal .form-row .form-group {
+    flex: 1;
+}
+
+/* Nút bấm */
+#promoModal .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #eef2ff;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    #promoModal .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+/* ===== THANH CUỘN CHO MODAL MÃ GIẢM GIÁ ===== */
+
+/* Modal container - cho phép cuộn */
+#promoModal {
+    overflow-y: auto !important;
+}
+
+/* Nội dung modal - giới hạn chiều cao và cho cuộn */
+#promoModal .modal-content {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    margin: 20px auto !important;
+}
+
+/* Body modal - cuộn khi nội dung dài */
+#promoModal .modal-body {
+    max-height: calc(90vh - 120px) !important;
+    overflow-y: auto !important;
+    padding: 20px 25px !important;
+}

@@ -76,6 +76,22 @@ class ChatController extends Controller
         $userId = $_SESSION['user']['id'] ?? null;
         
         $result = $this->chatModel->sendMessage($userId, $sessionId, 'user', $message);
+
+        if ($result) {
+            $notificationModel = new \App\Models\Notification();
+            $notificationModel->createNotification(
+                0,
+                'all_admins',
+                '🛎️ Hỗ trợ mới từ khách hàng',
+                'Một khách hàng đã gửi tin nhắn hỗ trợ trong phiên ' . $sessionId . '. Vui lòng kiểm tra.',
+                'support_message',
+                null,
+                null,
+                BASE_URL . '/index.php?url=admin/chat&session_id=' . urlencode($sessionId),
+                'comments',
+                1
+            );
+        }
         
         echo json_encode([
             'success' => $result,

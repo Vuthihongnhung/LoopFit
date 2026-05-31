@@ -116,7 +116,7 @@ class ProductController extends Controller
             return $this->json(['success' => false, 'error' => 'Upload ảnh thất bại']);
         }
 
-        $rented_count = (int)($_POST['rented_count'] ?? 0);
+        $rented_count = 0;
         $variants = $this->parseVariantsFromRequest();
 
         if (!empty($variants)) {
@@ -172,7 +172,7 @@ class ProductController extends Controller
             return $this->json(['success' => false, 'error' => 'Upload ảnh thất bại'], 500);
         }
         $finalImages = $newImages !== '' ? $newImages : $oldImages;
-        $rented_count = (int)($_POST['rented_count'] ?? 0);
+        $rented_count = (int)($product['rented_count'] ?? 0);
 
         $variants = $this->parseVariantsFromRequest();
 
