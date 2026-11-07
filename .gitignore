@@ -1,0 +1,30 @@
+
+# Environment / sensitive information
+.env
+.evn
+
+# Database backups
+*.sql
+*.sql.gz
+
+# Temporary files
+*.log
+*.tmp
+*.cache
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE settings
+.vscode/
+.idea/
+
+# Dependencies (if applicable)
+/vendor/
+/node_modules/
+
+# Temporary storage
+/storage/logs/
+/storage/cache/

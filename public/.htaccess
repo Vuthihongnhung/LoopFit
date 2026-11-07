@@ -1,0 +1,19 @@
+# Bật chế độ viết lại URL (rewrite engine)
+RewriteEngine On
+
+# Đặt thư mục gốc cho các đường dẫn tương đối (base path)
+# Tất cả các rewrite sẽ được tính từ /LoopFit/public/
+RewriteBase /LoopFit/public/
+
+# Điều kiện: nếu tệp tin yêu cầu không tồn tại (không phải file vật lý)
+RewriteCond %{REQUEST_FILENAME} !-f
+
+# Điều kiện: nếu thư mục yêu cầu không tồn tại (không phải thư mục thật)
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Quy tắc: chuyển hướng tất cả request còn lại đến index.php
+# - (.*) : toàn bộ đường dẫn (URL)
+# - index.php?url=$1 : chuyển đường dẫn thành tham số 'url' cho index.php
+# - QSA : giữ nguyên các tham số query string hiện có (Query String Append)
+# - L  : chỉ áp dụng quy tắc cuối cùng (Last), không xử lý thêm
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
